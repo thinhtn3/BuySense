@@ -1,17 +1,26 @@
 import { Router }  from 'express';
 import rateLimit    from 'express-rate-limit';
-import { getAllProducts }       from '../services/productService.js';
-import { getOrFetchResources } from '../services/resourceService.js';
+import { getAllProducts }                       from '../services/productService.js';
+import { getOrFetchResources, hasFreshResources } from '../services/resourceService.js';
 
 const router = Router();
 
-// 20 resource lookups per IP per hour
+// 20 resource lookups per IP per hour — skipped entirely when all products are cached
 const limiter = rateLimit({
   windowMs:        60 * 60 * 1000,
   max:             20,
   standardHeaders: true,
   legacyHeaders:   false,
   message:         { error: 'Too many requests — try again later.' },
+  skip: async (req) => {
+    try {
+      const ids    = (req.query.productIds ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+      const checks = await Promise.all(ids.map((id) => hasFreshResources(id)));
+      return checks.every(Boolean);
+    } catch {
+      return false;
+    }
+  },
 });
 
 router.use(limiter);

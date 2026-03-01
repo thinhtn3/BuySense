@@ -1,17 +1,27 @@
 import { Router }   from 'express';
 import rateLimit     from 'express-rate-limit';
-import { getAllProducts }      from '../services/productService.js';
-import { getOrFetchListings } from '../services/listingService.js';
+import { getAllProducts }                   from '../services/productService.js';
+import { getOrFetchListings, hasFreshListings } from '../services/listingService.js';
 
 const router = Router();
 
-// 10 compare clicks per IP per hour
+// 10 compare clicks per IP per hour — skipped entirely when all products are cached
 const limiter = rateLimit({
   windowMs:        60 * 60 * 1000,
   max:             10,
   standardHeaders: true,
   legacyHeaders:   false,
   message:         { error: 'Too many requests — please wait before comparing again.' },
+  skip: async (req) => {
+    try {
+      const ids       = (req.query.productIds ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+      const condition = req.query.condition ?? 'new';
+      const checks    = await Promise.all(ids.map((id) => hasFreshListings(id, condition)));
+      return checks.every(Boolean);
+    } catch {
+      return false;
+    }
+  },
 });
 
 router.use(limiter);

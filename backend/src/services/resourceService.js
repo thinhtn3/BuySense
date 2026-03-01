@@ -139,6 +139,14 @@ async function saveToSupabase(rows) {
   else console.log(`[resourceService] saved ${rows.length} resources`);
 }
 
+// ─── Cache check used by rate limiter skip ────────────────────────────────────
+export async function hasFreshResources(productId) {
+  const rows = await readFromSupabase(productId);
+  if (!rows.length) return false;
+  const age = Date.now() - new Date(rows[0].created_at).getTime();
+  return age < RESOURCE_TTL;
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 export async function getOrFetchResources(product) {
   const existing = await readFromSupabase(product.id);

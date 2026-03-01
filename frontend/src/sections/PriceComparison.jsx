@@ -38,17 +38,14 @@ function PriceCard({ product, priceData }) {
               {priceData.freeShipping && <span className="price-card__shipping"> · Free shipping</span>}
             </p>
           )}
-          {priceData.listingCount > 1 && (
-            <p className="price-card__count">from {priceData.listingCount} listings</p>
-          )}
           {priceData.url && (
             <a
-              className="price-card__link"
+              className="price-card__hover-link"
               href={priceData.url}
               target="_blank"
               rel="noopener noreferrer"
             >
-              View listing ↗
+              Visit listing ↗
             </a>
           )}
         </>

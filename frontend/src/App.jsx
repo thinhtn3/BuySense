@@ -69,6 +69,13 @@ export default function App() {
 
   return (
     <main className="page">
+      <div className="page-backgrounds" aria-hidden="true">
+        <div className="page-bg page-bg--1" />
+        <div className="page-bg page-bg--2" />
+        <div className="page-bg page-bg--3" />
+        <div className="page-bg page-bg--4" />
+      </div>
+
       <header className="hero">
         <h1 className="hero-title">Compare, then shop.</h1>
         <p className="hero-subtitle">

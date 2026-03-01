@@ -1,52 +1,54 @@
 import { useState } from 'react';
 
-// ─── Placeholder data (swap with Gemini response later) ───────────────────────
-function buildPlaceholder(products) {
-  const names = products.map((p) => p.name);
-  const [a, b] = names;
+// ─── Citation chip ────────────────────────────────────────────────────────────
+// Parses "[P1-2]" tokens out of a string and replaces them with linked chips.
+function WithCitations({ text, sources, products }) {
+  if (!text || !sources || !products) return <>{text}</>;
 
-  return {
-    verdict: b
-      ? `${a} and ${b} are closely matched, but each excels in different areas depending on your priorities.`
-      : `${a} is a strong all-rounder — here's what you should know before buying.`,
+  const parts = [];
+  const regex = /\[P(\d+)-(\d+)\]/g;
+  let last = 0;
+  let match;
 
-    strengths: Object.fromEntries(
-      products.map((p) => [
-        p.id,
-        [
-          'Placeholder strength — e.g. best-in-class display',
-          'Placeholder strength — e.g. longer battery life',
-          'Placeholder strength — e.g. wider software support',
-        ],
-      ])
-    ),
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
 
-    differences: b
-      ? [
-          `${a} prioritises one aspect while ${b} leans the other way.`,
-          'Build quality and materials differ noticeably between these two.',
-          'Software ecosystem and long-term update support diverge here.',
-          'After-sales service and warranty terms are worth comparing.',
-        ]
-      : [
-          'Consider how this fits your existing ecosystem.',
-          'Check resale value if upgrading in 12–18 months.',
-          'Accessories and third-party support vary widely in this category.',
-        ],
+    const productIdx = parseInt(match[1], 10) - 1;
+    const sourceNum  = parseInt(match[2], 10);
+    const product    = products[productIdx];
+    const sourceMap  = product ? sources[product.id] : null;
+    const resource   = sourceMap?.[sourceNum];
 
-    bestFor: Object.fromEntries(
-      products.map((p, i) => [
-        p.id,
-        i === 0
-          ? ['Power users', 'Content creators', 'Longevity seekers']
-          : ['Everyday use', 'Budget-conscious buyers', 'First-time buyers'],
-      ])
-    ),
-  };
+    if (resource) {
+      parts.push(
+        <a
+          key={match.index}
+          href={resource.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ci-citation"
+          title={resource.title}
+        >
+          {resource.thumbnail ? (
+            <img src={resource.thumbnail} alt={resource.source ?? ''} className="ci-citation__img" />
+          ) : (
+            <span className="ci-citation__icon">
+              {resource.type === 'official' ? '🔗' : resource.type === 'review' ? '⭐' : resource.type === 'video' ? '▶' : '📄'}
+            </span>
+          )}
+          <span className="ci-citation__label">{resource.source ?? resource.type}</span>
+        </a>
+      );
+    }
+
+    last = match.index + match[0].length;
+  }
+
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts}</>;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 function SkeletonBlock({ width = '100%', height = 14 }) {
   return (
     <span
@@ -85,16 +87,19 @@ function InsightSkeleton() {
   );
 }
 
-function VerdictCard({ text }) {
+// ─── Sub-components ───────────────────────────────────────────────────────────
+function VerdictCard({ text, sources, products }) {
   return (
     <div className="ci-verdict">
       <span className="ci-verdict__bar" aria-hidden="true" />
-      <p className="ci-verdict__text">{text}</p>
+      <p className="ci-verdict__text">
+        <WithCitations text={text} sources={sources} products={products} />
+      </p>
     </div>
   );
 }
 
-function StrengthsGrid({ products, strengths }) {
+function StrengthsGrid({ products, strengths, sources }) {
   return (
     <div className="ci-block">
       <p className="ci-block__label">Strengths</p>
@@ -106,7 +111,7 @@ function StrengthsGrid({ products, strengths }) {
               {(strengths[p.id] ?? []).map((s, i) => (
                 <li key={i} className="ci-strength-item">
                   <span className="ci-strength-item__dot" aria-hidden="true" />
-                  {s}
+                  <WithCitations text={s} sources={sources} products={products} />
                 </li>
               ))}
             </ul>
@@ -117,7 +122,7 @@ function StrengthsGrid({ products, strengths }) {
   );
 }
 
-function DifferencesList({ items }) {
+function DifferencesList({ items, sources, products }) {
   return (
     <div className="ci-block">
       <p className="ci-block__label">Key Differences</p>
@@ -125,7 +130,7 @@ function DifferencesList({ items }) {
         {items.map((d, i) => (
           <li key={i} className="ci-diff-item">
             <span className="ci-diff-item__num">{i + 1}</span>
-            {d}
+            <WithCitations text={d} sources={sources} products={products} />
           </li>
         ))}
       </ul>
@@ -154,19 +159,36 @@ function BestForRow({ products, bestFor }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-
 export default function ComparisonInsights({ products }) {
-  const [status,   setStatus]   = useState('idle');   // idle | loading | ready
+  const [status,   setStatus]   = useState('idle');   // idle | loading | ready | error
   const [insights, setInsights] = useState(null);
+  const [error,    setError]    = useState(null);
 
   if (!products.length) return null;
 
   async function handleGenerate() {
     setStatus('loading');
-    // Simulate async generation delay; replace with real Gemini call later
-    await new Promise((r) => setTimeout(r, 1400));
-    setInsights(buildPlaceholder(products));
-    setStatus('ready');
+    setError(null);
+
+    try {
+      const res = await fetch('/api/insights', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ productIds: products.map((p) => p.id) }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? 'Failed to generate insights.');
+      }
+
+      const data = await res.json();
+      setInsights(data);
+      setStatus('ready');
+    } catch (err) {
+      setError(err.message);
+      setStatus('error');
+    }
   }
 
   return (
@@ -198,11 +220,27 @@ export default function ComparisonInsights({ products }) {
       {/* Body */}
       {status === 'loading' && <InsightSkeleton />}
 
+      {status === 'error' && (
+        <p className="ci-error">{error}</p>
+      )}
+
       {status === 'ready' && insights && (
         <div className="ci-body">
-          <VerdictCard text={insights.verdict} />
-          <StrengthsGrid products={products} strengths={insights.strengths} />
-          <DifferencesList items={insights.differences} />
+          <VerdictCard
+            text={insights.verdict}
+            sources={insights.sources}
+            products={products}
+          />
+          <StrengthsGrid
+            products={products}
+            strengths={insights.strengths}
+            sources={insights.sources}
+          />
+          <DifferencesList
+            items={insights.differences}
+            sources={insights.sources}
+            products={products}
+          />
           <BestForRow products={products} bestFor={insights.bestFor} />
         </div>
       )}

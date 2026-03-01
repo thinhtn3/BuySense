@@ -97,6 +97,15 @@ export async function getOrFetchListings(product, condition = 'new') {
   return rows.map((r) => toListingModel(r, median));
 }
 
+// ─── Cache check used by rate limiter skip ────────────────────────────────────
+export async function hasFreshListings(productId, condition = 'new') {
+  const cond = condition === 'used' ? 'used' : 'new';
+  const rows = await readFromSupabase(productId, cond);
+  if (!rows.length) return false;
+  const age = Date.now() - new Date(rows[0].created_at).getTime();
+  return age < LISTING_TTL_MS;
+}
+
 // ─── Legacy helper used by /api/listings route ────────────────────────────────
 export async function getListingsForProduct(productId, condition = 'new') {
   const rows = await readFromSupabase(productId, condition);
