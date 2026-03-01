@@ -21,7 +21,7 @@ router.use(limiter);
 async function getResources(productId) {
   const { data, error } = await supabase
     .from('resources')
-    .select('id, title, url, source, snippet, type, rating, rating_max')
+    .select('id, title, url, source, snippet, type, rating, rating_max, thumbnail')
     .eq('product_id', productId)
     .not('snippet', 'is', null)
     .order('type')
@@ -78,8 +78,9 @@ router.post('/', async (req, res, next) => {
     const productNames = products.map((p) => `${p.brand} ${p.name}`).join(' vs ');
 
     const prompt = `You are a concise electronics buying advisor. Use ONLY the provided source snippets as evidence.
-When you use information from a source, cite it by appending [P<product_index>-<source_number>] — e.g. [P1-2] means product 1, source 2.
-If no sources exist for a product, use general knowledge but do NOT add citations.
+When a pro or con is directly supported by a source, cite it by appending [P<product_index>-<source_number>] — e.g. [P1-2] means product 1, source 2.
+Differences and bestFor must have NO citations — plain text only.
+If no sources exist for a product, use general knowledge but do NOT add citations anywhere.
 
 SOURCES:
 ${contextBlocks}
@@ -87,10 +88,13 @@ ${contextBlocks}
 TASK: Compare ${productNames} and respond with ONLY valid JSON (no markdown, no code block) in this exact shape:
 {
   "verdict": "2–3 sentence overall summary with citations where applicable",
-  "strengths": {
-${products.map((p, i) => `    "${p.id}": ["strength with optional [P${i + 1}-N] citation", ...]`).join(',\n')}
+  "pros": {
+${products.map((p, i) => `    "${p.id}": ["pro sentence with optional [P${i + 1}-N] citation", ...]`).join(',\n')}
   },
-  "differences": ["difference sentence with optional citation", ...],
+  "cons": {
+${products.map((p, i) => `    "${p.id}": ["con sentence with optional [P${i + 1}-N] citation", ...]`).join(',\n')}
+  },
+  "differences": ["plain difference — no citations", ...],
   "bestFor": {
 ${products.map((p, i) => `    "${p.id}": ["use case tag", ...]`).join(',\n')}
   }

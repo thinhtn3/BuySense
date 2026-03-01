@@ -1,7 +1,27 @@
 import { useState } from 'react';
 
-// ─── Citation chip ────────────────────────────────────────────────────────────
-// Parses "[P1-2]" tokens out of a string and replaces them with linked chips.
+// ─── Citation chip — thumbnail/icon only, no label text ──────────────────────
+function CitationChip({ resource }) {
+  return (
+    <a
+      href={resource.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="ci-citation"
+      title={resource.title}
+    >
+      {resource.thumbnail ? (
+        <img src={resource.thumbnail} alt={resource.source ?? ''} className="ci-citation__img" />
+      ) : (
+        <span className="ci-citation__icon">
+          {resource.type === 'official' ? '🔗' : resource.type === 'review' ? '⭐' : resource.type === 'video' ? '▶' : '📄'}
+        </span>
+      )}
+    </a>
+  );
+}
+
+// Parses "[P1-2]" tokens out of a string and replaces them with citation chips.
 function WithCitations({ text, sources, products }) {
   if (!text || !sources || !products) return <>{text}</>;
 
@@ -16,29 +36,10 @@ function WithCitations({ text, sources, products }) {
     const productIdx = parseInt(match[1], 10) - 1;
     const sourceNum  = parseInt(match[2], 10);
     const product    = products[productIdx];
-    const sourceMap  = product ? sources[product.id] : null;
-    const resource   = sourceMap?.[sourceNum];
+    const resource   = product ? sources?.[product.id]?.[sourceNum] : null;
 
     if (resource) {
-      parts.push(
-        <a
-          key={match.index}
-          href={resource.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ci-citation"
-          title={resource.title}
-        >
-          {resource.thumbnail ? (
-            <img src={resource.thumbnail} alt={resource.source ?? ''} className="ci-citation__img" />
-          ) : (
-            <span className="ci-citation__icon">
-              {resource.type === 'official' ? '🔗' : resource.type === 'review' ? '⭐' : resource.type === 'video' ? '▶' : '📄'}
-            </span>
-          )}
-          <span className="ci-citation__label">{resource.source ?? resource.type}</span>
-        </a>
-      );
+      parts.push(<CitationChip key={match.index} resource={resource} />);
     }
 
     last = match.index + match[0].length;
@@ -77,17 +78,12 @@ function InsightSkeleton() {
           <SkeletonBlock width="82%" />
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 24 }}>
-        <SkeletonBlock width="30%" height={13} />
-        <SkeletonBlock width="92%" />
-        <SkeletonBlock width="78%" />
-        <SkeletonBlock width="85%" />
-      </div>
     </div>
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Tab 1: Overview ─────────────────────────────────────────────────────────
+
 function VerdictCard({ text, sources, products }) {
   return (
     <div className="ci-verdict">
@@ -99,19 +95,33 @@ function VerdictCard({ text, sources, products }) {
   );
 }
 
-function StrengthsGrid({ products, strengths, sources }) {
+function ProsCons({ products, pros, cons, sources }) {
   return (
     <div className="ci-block">
-      <p className="ci-block__label">Strengths</p>
-      <div className="ci-strengths-grid">
+      <p className="ci-block__label">Pros &amp; Cons</p>
+      <div className="ci-proscons-grid">
         {products.map((p) => (
-          <div key={p.id} className="ci-strength-col">
-            <p className="ci-strength-col__name">{p.name}</p>
-            <ul className="ci-strength-list">
-              {(strengths[p.id] ?? []).map((s, i) => (
-                <li key={i} className="ci-strength-item">
-                  <span className="ci-strength-item__dot" aria-hidden="true" />
-                  <WithCitations text={s} sources={sources} products={products} />
+          <div key={p.id} className="ci-proscons-col">
+            <p className="ci-proscons-col__name">{p.name}</p>
+
+            <ul className="ci-pro-list">
+              {(pros[p.id] ?? []).map((s, i) => (
+                <li key={i} className="ci-pro-item">
+                  <span className="ci-pro-item__dot" aria-hidden="true">+</span>
+                  <span>
+                    <WithCitations text={s} sources={sources} products={products} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <ul className="ci-con-list">
+              {(cons[p.id] ?? []).map((s, i) => (
+                <li key={i} className="ci-con-item">
+                  <span className="ci-con-item__dot" aria-hidden="true">−</span>
+                  <span>
+                    <WithCitations text={s} sources={sources} products={products} />
+                  </span>
                 </li>
               ))}
             </ul>
@@ -122,7 +132,7 @@ function StrengthsGrid({ products, strengths, sources }) {
   );
 }
 
-function DifferencesList({ items, sources, products }) {
+function DifferencesList({ items }) {
   return (
     <div className="ci-block">
       <p className="ci-block__label">Key Differences</p>
@@ -130,7 +140,7 @@ function DifferencesList({ items, sources, products }) {
         {items.map((d, i) => (
           <li key={i} className="ci-diff-item">
             <span className="ci-diff-item__num">{i + 1}</span>
-            <WithCitations text={d} sources={sources} products={products} />
+            {d}
           </li>
         ))}
       </ul>
@@ -158,17 +168,63 @@ function BestForRow({ products, bestFor }) {
   );
 }
 
+// ─── Tab 2: What People Are Saying ───────────────────────────────────────────
+
+function QuoteCard({ resource, productName }) {
+  if (!resource.snippet) return null;
+  return (
+    <a
+      href={resource.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="ci-quote-card"
+    >
+      <div className="ci-quote-card__header">
+        {resource.thumbnail && (
+          <img src={resource.thumbnail} alt="" className="ci-quote-card__favicon" />
+        )}
+        <span className="ci-quote-card__source">{resource.source ?? resource.type}</span>
+        <span className="ci-quote-card__product">{productName}</span>
+      </div>
+      <p className="ci-quote-card__text">"{resource.snippet}"</p>
+      <span className="ci-quote-card__link">Read more ↗</span>
+    </a>
+  );
+}
+
+function WhatPeopleSaying({ products, sources }) {
+  const allQuotes = products.flatMap((p) =>
+    Object.values(sources?.[p.id] ?? {})
+      .filter((r) => r.snippet)
+      .map((r) => ({ resource: r, productName: p.name }))
+  );
+
+  if (!allQuotes.length) {
+    return <p className="ci-empty">No source snippets available for these products.</p>;
+  }
+
+  return (
+    <div className="ci-quotes-grid">
+      {allQuotes.map(({ resource, productName }, i) => (
+        <QuoteCard key={i} resource={resource} productName={productName} />
+      ))}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function ComparisonInsights({ products }) {
-  const [status,   setStatus]   = useState('idle');   // idle | loading | ready | error
+  const [status,   setStatus]   = useState('idle');
   const [insights, setInsights] = useState(null);
   const [error,    setError]    = useState(null);
+  const [tab,      setTab]      = useState('overview');
 
   if (!products.length) return null;
 
   async function handleGenerate() {
     setStatus('loading');
     setError(null);
+    setTab('overview');
 
     try {
       const res = await fetch('/api/insights', {
@@ -182,8 +238,7 @@ export default function ComparisonInsights({ products }) {
         throw new Error(body.error ?? 'Failed to generate insights.');
       }
 
-      const data = await res.json();
-      setInsights(data);
+      setInsights(await res.json());
       setStatus('ready');
     } catch (err) {
       setError(err.message);
@@ -193,7 +248,7 @@ export default function ComparisonInsights({ products }) {
 
   return (
     <section className="ci-section">
-      {/* Header row */}
+      {/* Header */}
       <div className="ci-header">
         <div className="ci-header__left">
           <span className="ci-header__icon" aria-hidden="true">✦</span>
@@ -217,32 +272,53 @@ export default function ComparisonInsights({ products }) {
         </button>
       </div>
 
-      {/* Body */}
       {status === 'loading' && <InsightSkeleton />}
-
-      {status === 'error' && (
-        <p className="ci-error">{error}</p>
-      )}
+      {status === 'error'   && <p className="ci-error">{error}</p>}
 
       {status === 'ready' && insights && (
-        <div className="ci-body">
-          <VerdictCard
-            text={insights.verdict}
-            sources={insights.sources}
-            products={products}
-          />
-          <StrengthsGrid
-            products={products}
-            strengths={insights.strengths}
-            sources={insights.sources}
-          />
-          <DifferencesList
-            items={insights.differences}
-            sources={insights.sources}
-            products={products}
-          />
-          <BestForRow products={products} bestFor={insights.bestFor} />
-        </div>
+        <>
+          {/* Tabs */}
+          <div className="ci-tabs">
+            <button
+              className={`ci-tab${tab === 'overview' ? ' ci-tab--active' : ''}`}
+              onClick={() => setTab('overview')}
+            >
+              Overview
+            </button>
+            <button
+              className={`ci-tab${tab === 'people' ? ' ci-tab--active' : ''}`}
+              onClick={() => setTab('people')}
+            >
+              What People Are Saying
+            </button>
+          </div>
+
+          {/* Tab 1 — Overview */}
+          {tab === 'overview' && (
+            <div className="ci-body">
+              <VerdictCard
+                text={insights.verdict}
+                sources={insights.sources}
+                products={products}
+              />
+              <ProsCons
+                products={products}
+                pros={insights.pros}
+                cons={insights.cons}
+                sources={insights.sources}
+              />
+              <DifferencesList items={insights.differences} />
+              <BestForRow products={products} bestFor={insights.bestFor} />
+            </div>
+          )}
+
+          {/* Tab 2 — What People Are Saying */}
+          {tab === 'people' && (
+            <div className="ci-body">
+              <WhatPeopleSaying products={products} sources={insights.sources} />
+            </div>
+          )}
+        </>
       )}
     </section>
   );

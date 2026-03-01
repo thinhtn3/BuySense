@@ -1234,45 +1234,164 @@ body {
 }
 
 /* ─── Citation chip ─── */
+/* ─── Citation chip — thumbnail/icon only ─── */
 .ci-citation {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
   margin: 0 2px;
-  padding: 1px 6px 1px 3px;
+  padding: 2px;
   background: var(--bs-hover-bg);
   border: 1px solid var(--bs-border);
-  border-radius: 20px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--bs-text-muted);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
   text-decoration: none;
   vertical-align: middle;
-  transition: background var(--bs-transition), color var(--bs-transition);
-  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background var(--bs-transition);
 }
-.ci-citation:hover {
-  background: var(--bs-border);
-  color: var(--bs-text);
-}
+.ci-citation:hover { background: var(--bs-border); }
 .ci-citation__img {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.ci-citation__icon { font-size: 0.6rem; line-height: 1; }
+
+/* ─── Tabs ─── */
+.ci-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--bs-border);
+  padding-bottom: 0;
+}
+.ci-tab {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--bs-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color var(--bs-transition), border-color var(--bs-transition);
+}
+.ci-tab:hover { color: var(--bs-text); }
+.ci-tab--active {
+  color: var(--bs-text);
+  border-bottom-color: var(--bs-text);
+  font-weight: 600;
+}
+
+/* ─── Pros & Cons ─── */
+.ci-proscons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+.ci-proscons-col__name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--bs-text);
+  margin: 0 0 10px;
+}
+.ci-pro-list,
+.ci-con-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ci-pro-item,
+.ci-con-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: var(--bs-text);
+  line-height: 1.4;
+}
+.ci-pro-item__dot {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--bs-accent);
+  flex-shrink: 0;
+}
+.ci-con-item__dot {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--bs-badge-over);
+  flex-shrink: 0;
+}
+
+/* ─── Quote cards ─── */
+.ci-quotes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 4px;
+}
+.ci-quote-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--bs-card);
+  border: 1px solid var(--bs-border);
+  border-radius: var(--bs-radius-card);
+  text-decoration: none;
+  transition: box-shadow var(--bs-transition);
+}
+.ci-quote-card:hover { box-shadow: var(--bs-shadow-card); }
+.ci-quote-card__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ci-quote-card__favicon {
+  width: 14px;
+  height: 14px;
   border-radius: 2px;
   object-fit: cover;
   flex-shrink: 0;
 }
-.ci-citation__icon {
-  font-size: 0.65rem;
-  line-height: 1;
+.ci-quote-card__source {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--bs-text);
+  text-transform: capitalize;
 }
-.ci-citation__label {
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.ci-quote-card__product {
+  font-size: 0.7rem;
+  color: var(--bs-text-muted);
+  margin-left: auto;
+}
+.ci-quote-card__text {
+  font-size: 0.875rem;
+  color: var(--bs-text);
+  line-height: 1.55;
+  margin: 0;
+  font-style: italic;
+}
+.ci-quote-card__link {
+  font-size: 0.75rem;
+  color: var(--bs-accent);
+  margin-top: auto;
 }
 
-/* ─── Error state ─── */
+/* ─── Empty + error states ─── */
+.ci-empty {
+  font-size: 0.875rem;
+  color: var(--bs-text-subtle);
+  margin: 16px 0 0;
+}
 .ci-error {
   font-size: 0.875rem;
   color: var(--bs-badge-over);
