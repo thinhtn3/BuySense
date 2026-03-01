@@ -1,49 +1,30 @@
 const SERP_API_URL = 'https://serpapi.com/search.json';
 
-// Prepend a condition keyword so Google Shopping surfaces relevant results
 const CONDITION_PREFIX = {
-  new:      '',
-  like_new: 'refurbished',
-  used:     'used',
+  new:  '',
+  used: 'used',
 };
 
-// ─── In-memory cache (6-hour TTL) ────────────────────────────────────────────
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const cache = new Map();
-
-function getCached(key) {
-  const entry = cache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expires) { cache.delete(key); return null; }
-  return entry.data;
-}
-
-function setCache(key, data) {
-  cache.set(key, { data, expires: Date.now() + CACHE_TTL_MS });
-}
-
-// ─── Single product lookup ────────────────────────────────────────────────────
-export async function getCheapestPrice(product, condition = 'new') {
+/**
+ * Calls SerpAPI Google Shopping and returns all listings sorted cheapest first.
+ * Each listing maps to a row shape compatible with the Supabase listings table.
+ *
+ * @returns {Array<{ retailer, price, url, freeShipping }>}
+ */
+export async function fetchListingsFromSerp(product, condition = 'new') {
   const apiKey = process.env.SERP_API_KEY;
   if (!apiKey) throw new Error('SERP_API_KEY is not configured');
 
-  const cond       = CONDITION_PREFIX[condition] !== undefined ? condition : 'new';
-  const cacheKey   = `${product.id}::${cond}`;
-  const cached     = getCached(cacheKey);
-  if (cached) {
-    console.log(`[serpApiService] cache hit — ${cacheKey}`);
-    return { ...cached, fromCache: true };
-  }
-
-  const prefix  = CONDITION_PREFIX[cond];
-  const query   = [prefix, product.brand, product.name].filter(Boolean).join(' ');
+  const cond   = condition === 'used' ? 'used' : 'new';
+  const prefix = CONDITION_PREFIX[cond];
+  const query  = [prefix, product.brand, product.name].filter(Boolean).join(' ');
 
   const params = new URLSearchParams({
     engine:  'google_shopping',
     q:       query,
     api_key: apiKey,
     tbs:     'p_ord:p',   // sort by price low → high
-    num:     '10',
+    num:     '20',
     gl:      'us',
     hl:      'en',
   });
@@ -59,41 +40,27 @@ export async function getCheapestPrice(product, condition = 'new') {
     throw new Error(`SerpAPI error ${res.status}: ${body}`);
   }
 
-  const data    = await res.json();
-  const results = (data.shopping_results ?? [])
+  const data = await res.json();
+
+  const listings = (data.shopping_results ?? [])
     .filter((r) => r.extracted_price != null)
-    .sort((a, b) => a.extracted_price - b.extracted_price);
+    .map((r) => {
+      const price  = r.extracted_price;
+      const period = r.installment?.period ?? null;  // nested inside installment object
 
-  if (!results.length) {
-    console.warn(`[serpApiService] no results for "${query}"`);
-    return null;
-  }
+      return {
+        retailer:     r.source       ?? 'Unknown',
+        price,
+        period,
+        finalPrice:   period ? price * period : price,
+        url:          r.product_link ?? r.link ?? null,
+        title:        r.title        ?? null,
+        imageUrl:     r.thumbnail    ?? null,
+        freeShipping: (r.extensions ?? []).some((e) => /free\s*shipping/i.test(e)),
+      };
+    })
+    .sort((a, b) => a.finalPrice - b.finalPrice);  // sort by true total cost
 
-  const top = results[0];
-  const result = {
-    productId:  product.id,
-    condition:  cond,
-    price:      top.extracted_price,
-    currency:   'USD',
-    title:      top.title,
-    source:     top.source  ?? null,
-    url:        top.link    ?? null,
-    thumbnail:  top.thumbnail ?? null,
-    fetchedAt:  Date.now(),
-  };
-
-  setCache(cacheKey, result);
-  return result;
-}
-
-// ─── Batch lookup (one SerpAPI call per product) ──────────────────────────────
-export async function getPricesForProducts(products, condition = 'new') {
-  const results = await Promise.allSettled(
-    products.map((p) => getCheapestPrice(p, condition))
-  );
-
-  return results.map((r, i) => ({
-    productId: products[i].id,
-    ...(r.status === 'fulfilled' ? r.value : { error: r.reason?.message ?? 'Failed' }),
-  }));
+  console.log(`[serpApiService] found ${listings.length} listings for "${query}"`);
+  return listings;
 }

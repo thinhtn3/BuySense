@@ -11,6 +11,7 @@
     "seed:db": "node scripts/seedSupabase.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.98.0",
     "cheerio": "^1.2.0",
     "cors": "^2.8.5",

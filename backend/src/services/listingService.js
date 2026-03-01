@@ -1,14 +1,14 @@
-import { supabase } from '../lib/supabase.js';
-import { createListing } from '../models/Listing.js';
-import { labelListing } from './heuristicsService.js';
+import { randomUUID }            from 'crypto';
+import { supabase }              from '../lib/supabase.js';
+import { createListing }         from '../models/Listing.js';
+import { labelListing }          from './heuristicsService.js';
+import { fetchListingsFromSerp } from './serpApiService.js';
 
-// Market medians used for labelling — replace with live aggregation later
-const MARKET_MEDIANS = {
-  'iphone-16-128gb':       829,
-  'iphone-16-pro-256gb':   999,
-};
+// Re-fetch listings older than 24 hours
+const LISTING_TTL_MS = 24 * 60 * 60 * 1000;
 
-export async function getListingsForProduct(productId, condition = 'new') {
+// ─── Read existing listings from Supabase ────────────────────────────────────
+async function readFromSupabase(productId, condition) {
   const { data, error } = await supabase
     .from('listings')
     .select('*')
@@ -16,20 +16,99 @@ export async function getListingsForProduct(productId, condition = 'new') {
     .eq('condition', condition)
     .order('price', { ascending: true });
 
-  if (error) throw Object.assign(new Error(error.message), { status: 500 });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
 
-  const median = MARKET_MEDIANS[productId] ?? 0;
+// ─── Persist SerpAPI results into Supabase ────────────────────────────────────
+async function saveListings(productId, condition, serpListings) {
+  if (!serpListings.length) return;
 
-  return data.map((row) =>
-    createListing({
-      id:           row.id,
-      productId:    row.product_id,
-      retailer:     row.retailer,
-      condition:    row.condition,
-      price:        row.price,
-      url:          row.url,
-      freeShipping: row.free_shipping,
-      label:        median > 0 ? labelListing(row.price, median) : row.label,
-    })
-  );
+  const rows = serpListings.map((l) => ({
+    id:            randomUUID(),
+    product_id:    productId,
+    retailer:      l.retailer,
+    condition,
+    price:         l.price,
+    period:        l.period      ?? null,
+    final_price:   l.finalPrice,
+    url:           l.url,
+    title:         l.title       ?? null,
+    image_url:     l.imageUrl    ?? null,
+    free_shipping: l.freeShipping,
+    label:         null,
+  }));
+
+  const { error } = await supabase.from('listings').insert(rows);
+  if (error) console.warn('[listingService] Supabase insert error:', error.message);
+  else console.log(`[listingService] saved ${rows.length} listings for ${productId} (${condition})`);
+}
+
+// ─── Shape a Supabase row into a Listing model, computing label on the fly ───
+function toListingModel(row, medianPrice) {
+  return createListing({
+    id:           row.id,
+    productId:    row.product_id,
+    retailer:     row.retailer,
+    condition:    row.condition,
+    price:        parseFloat(row.price),
+    period:       row.period      ?? null,
+    url:          row.url,
+    title:        row.title       ?? null,
+    imageUrl:     row.image_url   ?? null,
+    freeShipping: row.free_shipping,
+    // label is based on finalPrice so comparisons reflect true total cost
+    label:        medianPrice > 0 ? labelListing(row.final_price ?? parseFloat(row.price), medianPrice) : null,
+  });
+}
+
+// ─── Public: check Supabase first, fall back to SerpAPI ──────────────────────
+export async function getOrFetchListings(product, condition = 'new') {
+  const cond = condition === 'used' ? 'used' : 'new';
+
+  // 1 — Check Supabase for fresh listings
+  let rows = await readFromSupabase(product.id, cond);
+
+  if (rows.length > 0) {
+    const age = Date.now() - new Date(rows[0].created_at).getTime();
+    if (age < LISTING_TTL_MS) {
+      console.log(`[listingService] Supabase cache hit — ${product.id} (${cond}), ${rows.length} listings`);
+      const median = computeMedian(rows.map((r) => parseFloat(r.final_price ?? r.price)));
+      return rows.map((r) => toListingModel(r, median));
+    }
+
+    // Stale — delete and re-fetch
+    console.log(`[listingService] listings stale for ${product.id} (${cond}), refreshing…`);
+    await supabase.from('listings').delete()
+      .eq('product_id', product.id)
+      .eq('condition', cond);
+  }
+
+  // 2 — Fetch from SerpAPI
+  const serpListings = await fetchListingsFromSerp(product, cond);
+  if (!serpListings.length) return [];
+
+  // 3 — Persist to Supabase
+  await saveListings(product.id, cond, serpListings);
+
+  // 4 — Re-read from Supabase (so labels are applied consistently)
+  rows = await readFromSupabase(product.id, cond);
+  const median = computeMedian(rows.map((r) => parseFloat(r.final_price ?? r.price)));
+  return rows.map((r) => toListingModel(r, median));
+}
+
+// ─── Legacy helper used by /api/listings route ────────────────────────────────
+export async function getListingsForProduct(productId, condition = 'new') {
+  const rows = await readFromSupabase(productId, condition);
+  const median = computeMedian(rows.map((r) => parseFloat(r.final_price ?? r.price)));
+  return rows.map((r) => toListingModel(r, median));
+}
+
+function computeMedian(prices) {
+  if (!prices.length) return 0;
+  const sorted = [...prices].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2;
 }

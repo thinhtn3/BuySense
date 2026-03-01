@@ -1,7 +1,6 @@
 const OPTIONS = [
-  { value: 'new',      label: 'New' },
-  { value: 'like_new', label: 'Like New' },
-  { value: 'used',     label: 'Used' },
+  { value: 'new',  label: 'New' },
+  { value: 'used', label: 'Used' },
 ];
 
 export default function ConditionToggle({ value, onChange }) {

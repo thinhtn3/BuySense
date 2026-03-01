@@ -54,10 +54,8 @@ export default function App() {
 
       <ProductSelection onSelectionsChange={setSelectedProducts} />
 
-      <SpecsSection products={selectedProducts} />
-
       {hasProducts && (
-        <section className="compare-trigger">
+        <div className="compare-trigger">
           <ConditionToggle value={condition} onChange={(c) => { setCondition(c); setPriceResults(null); }} />
 
           <button
@@ -78,8 +76,10 @@ export default function App() {
           {priceError && (
             <p className="compare-error">{priceError}</p>
           )}
-        </section>
+        </div>
       )}
+
+      <SpecsSection products={selectedProducts} />
 
       {priceResults && (
         <PriceComparison

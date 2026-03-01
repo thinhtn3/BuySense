@@ -39,7 +39,9 @@ create table if not exists listings (
   retailer      text              not null,
   condition     listing_condition not null default 'new',
   price         numeric(10, 2)    not null,
-  url           text              not null,
+  url           text,                                   -- product_link from SerpAPI
+  title         text,                                   -- full listing title from SerpAPI
+  image_url     text,                                   -- thumbnail from SerpAPI
   free_shipping boolean           not null default false,
   label         listing_label,
   created_at    timestamptz       not null default now(),

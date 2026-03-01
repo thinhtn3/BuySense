@@ -6,6 +6,7 @@ import productRoutes    from './routes/products.js';
 import comparisonRoutes from './routes/comparisons.js';
 import listingRoutes    from './routes/listings.js';
 import priceRoutes      from './routes/prices.js';
+import chatRoutes       from './routes/chat.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,6 +20,7 @@ app.use('/api/products',    productRoutes);
 app.use('/api/comparisons', comparisonRoutes);
 app.use('/api/listings',    listingRoutes);
 app.use('/api/prices',      priceRoutes);
+app.use('/api/chat',        chatRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err.stack);
