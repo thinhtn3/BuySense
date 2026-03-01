@@ -140,25 +140,38 @@ router.post('/', async (req, res, next) => {
 
     const prompt = `You are a sharp, opinionated electronics buying advisor. Your job is to give buyers real confidence — or real warnings — not vague summaries.
 
-Use the provided source snippets as evidence. When a pro or con is directly supported by a source, cite it with [P<product_index>-<source_number>] (e.g. [P1-2] = product 1, source 2).
-Differences and bestFor must have NO citations — plain text only.
-If no sources exist, use your knowledge but do NOT add citation markers.
+CITATION RULES (follow exactly, no exceptions):
+- Every pro and con MUST be backed by a real source — a published review, spec sheet, or forum post.
+- Append [P<product_index>-<source_number>] at the END of any string that has a source.
+  • product_index = which product (1 = first product listed, 2 = second, etc.)
+  • source_number = integer starting at 1, matching the index in that product's "citedSources" array below
+  Example: "Excellent battery life [P1-2]" means product 1, 2nd cited source
+- NEVER write bare tokens like [P4] or [4] or (P4). The format is ALWAYS [P<digit>-<digit>].
+- Differences and bestFor must have ZERO citation markers — plain text only.
+- For EACH product, also output a "citedSources" array listing every publication/video/site you drew from.
+  Each entry: { "source": "Site Name", "url": "https://...", "title": "Article or video title", "type": "review|official|video|article", "snippet": "One quote or key finding from the source (≤25 words)" }
+  • source_number in [P<x>-N] must match the 1-based index in that product's citedSources array.
+  • Only include sources you genuinely know exist. Do NOT fabricate URLs — use the real canonical URL for the review (e.g. https://www.pcmag.com/reviews/apple-iphone-15). If unsure of the exact URL, omit the source entirely rather than guessing.
 
 PRODUCT CONTEXT:
 ${contextBlocks}
 ${usedRiskSection}
 TASK: Compare ${productNames} (condition: ${condition}) and respond with ONLY valid JSON (no markdown, no code block):
 {
-  "verdict": "2–3 sharp sentences. Be opinionated. Name the winner if there is one. Include citations where applicable.",
+  "winner": "one of [${products.map((p) => `\\"${p.id}\\"`).join(', ')}] — the exact product ID of the clear winner, or null if it is genuinely a tie",
+  "verdict": "2–3 sharp sentences. Be opinionated. Reference the winner by name. Include citations where applicable.",
   "pros": {
-${products.map((p, i) => `    "${p.id}": ["specific pro with optional [P${i + 1}-N] citation — not generic"]`).join(',\n')}
+${products.map((p, i) => `    "${p.id}": ["specific pro with [P${i + 1}-N] citation — required, not optional"]`).join(',\n')}
   },
   "cons": {
-${products.map((p, i) => `    "${p.id}": ["specific con with optional [P${i + 1}-N] citation — not generic"]`).join(',\n')}
+${products.map((p, i) => `    "${p.id}": ["specific con with [P${i + 1}-N] citation — required, not optional"]`).join(',\n')}
   },
   "differences": ["Numbered plain-text difference — be specific, not vague. Max 4 items."],
   "bestFor": {
 ${products.map((p, i) => `    "${p.id}": ["specific buyer persona tag, max 3"]`).join(',\n')}
+  },
+  "citedSources": {
+${products.map((p, i) => `    "${p.id}": [{ "source": "...", "url": "https://...", "title": "...", "type": "review|official|video|article", "snippet": "..." }]`).join(',\n')}
   }${usedInsightShape}
 }`;
 
@@ -173,12 +186,30 @@ ${products.map((p, i) => `    "${p.id}": ["specific buyer persona tag, max 3"]`)
       return next(Object.assign(new Error('Failed to parse Gemini response as JSON'), { status: 502 }));
     }
 
+    // Merge: prefer DB sources (real, pre-vetted); fall back to Gemini self-reported sources
+    const mergedSources = Object.fromEntries(
+      products.map((p, i) => {
+        const dbMap = sourceMaps[i]; // { 1: resource, 2: resource, … }
+        if (Object.keys(dbMap).length > 0) return [p.id, dbMap];
+
+        // Convert Gemini's citedSources array → same 1-indexed map format
+        const geminiList = parsed.citedSources?.[p.id] ?? [];
+        const geminiMap  = Object.fromEntries(
+          geminiList
+            .filter((s) => s?.url && s.url.startsWith('http'))
+            .map((s, idx) => [idx + 1, s])
+        );
+        return [p.id, geminiMap];
+      })
+    );
+
+    // Strip citedSources from the client payload — it's been folded into sources
+    const { citedSources: _dropped, ...rest } = parsed;
+
     res.json({
-      ...parsed,
+      ...rest,
       condition,
-      sources: Object.fromEntries(
-        products.map((p, i) => [p.id, sourceMaps[i]])
-      ),
+      sources: mergedSources,
     });
   } catch (err) {
     next(err);

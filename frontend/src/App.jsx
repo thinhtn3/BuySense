@@ -8,6 +8,7 @@ import ListingsSection      from '@/sections/ListingsSection.jsx';
 import ConditionToggle      from '@/components/ConditionToggle.jsx';
 import UserWidget           from '@/components/UserWidget.jsx';
 import WishlistPopup        from '@/components/WishlistPopup.jsx';
+import AnimateIn            from '@/components/AnimateIn.jsx';
 
 export default function App() {
   const [selectedProducts, setSelectedProducts] = useState([]);
@@ -85,60 +86,74 @@ export default function App() {
         <UserWidget />
       </nav>
 
-      <header className="hero">
-        <h1 className="hero-title">Compare, then shop.</h1>
-        <p className="hero-subtitle">
-          Choose what you're deciding between. We'll show you what matters.
-        </p>
-      </header>
+      <AnimateIn>
+        <header className="hero">
+          <h1 className="hero-title">Compare, then shop.</h1>
+          <p className="hero-subtitle">
+            Choose what you're deciding between. We'll show you what matters.
+          </p>
+        </header>
+      </AnimateIn>
 
       <ProductSelection onSelectionsChange={setSelectedProducts} />
 
-      <div className="compare-trigger">
-        <ConditionToggle value={condition} onChange={(c) => { setCondition(c); setPriceResults(null); setResourceData(null); }} />
+      <AnimateIn>
+        <div className="compare-trigger">
+          <ConditionToggle value={condition} onChange={(c) => { setCondition(c); setPriceResults(null); setResourceData(null); }} />
 
-        <button
-          className={`compare-btn${isFetching ? ' compare-btn--loading' : ''}`}
-          onClick={handleCompare}
-          disabled={isFetching || !hasProducts}
-        >
-          {isFetching ? (
-            <>
-              <span className="compare-btn__spinner" />
-              Fetching…
-            </>
-          ) : (
-            hasComparisons ? 'Refresh' : 'Compare Prices →'
-          )}
-        </button>
+          <button
+            className={`compare-btn${isFetching ? ' compare-btn--loading' : ''}`}
+            onClick={handleCompare}
+            disabled={isFetching || !hasProducts}
+          >
+            {isFetching ? (
+              <>
+                <span className="compare-btn__spinner" />
+                Fetching…
+              </>
+            ) : (
+              hasComparisons ? 'Refresh' : 'Compare →'
+            )}
+          </button>
 
-        {fetchError && <p className="compare-error">{fetchError}</p>}
-      </div>
+          {fetchError && <p className="compare-error">{fetchError}</p>}
+        </div>
+      </AnimateIn>
 
       {priceResults && (
-        <PriceComparison
-          products={selectedProducts}
-          priceResults={priceResults}
-          condition={condition}
-        />
+        <AnimateIn>
+          <PriceComparison
+            products={selectedProducts}
+            priceResults={priceResults}
+            condition={condition}
+          />
+        </AnimateIn>
       )}
 
-      {hasProducts && <ComparisonInsights products={selectedProducts} condition={condition} compareKey={compareKey} />}
+      {hasProducts && (
+        <AnimateIn>
+          <ComparisonInsights products={selectedProducts} condition={condition} compareKey={compareKey} />
+        </AnimateIn>
+      )}
 
       <SpecsSection products={selectedProducts} />
 
       {resourceData && (
-        <ResourcesSection
-          products={selectedProducts}
-          resourceData={resourceData}
-        />
+        <AnimateIn>
+          <ResourcesSection
+            products={selectedProducts}
+            resourceData={resourceData}
+          />
+        </AnimateIn>
       )}
 
       {priceResults && (
-        <ListingsSection
-          products={selectedProducts}
-          priceResults={priceResults}
-        />
+        <AnimateIn>
+          <ListingsSection
+            products={selectedProducts}
+            priceResults={priceResults}
+          />
+        </AnimateIn>
       )}
 
       <WishlistPopup />

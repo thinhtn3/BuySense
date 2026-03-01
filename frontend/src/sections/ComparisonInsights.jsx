@@ -16,7 +16,8 @@ function abbrev(source) {
 // ─── Citation chip ────────────────────────────────────────────────────────────
 function CitationChip({ resource }) {
   if (!resource?.url) return null;
-  const chip = TYPE_CHIP[resource.type] ?? TYPE_CHIP.article;
+  const chip    = TYPE_CHIP[resource.type] ?? TYPE_CHIP.article;
+  const tooltip = resource.title ?? resource.source ?? resource.url;
 
   return (
     <a
@@ -24,7 +25,8 @@ function CitationChip({ resource }) {
       target="_blank"
       rel="noopener noreferrer"
       className="ci-citation"
-      title={resource.title ?? resource.source}
+      title={tooltip}
+      aria-label={tooltip}
       style={{ background: chip.bg }}
     >
       {resource.thumbnail ? (
@@ -40,6 +42,7 @@ function CitationChip({ resource }) {
 
 // Resolves a single "P1-2" token string to a resource
 function resolveRef(ref, sources, products) {
+  // Expected format: P1-2 (product index - source index)
   const m = ref.trim().match(/^P(\d+)-(\d+)$/i);
   if (!m) return null;
   const product  = products[parseInt(m[1], 10) - 1];
@@ -48,9 +51,14 @@ function resolveRef(ref, sources, products) {
 }
 
 /**
- * Strips all [P1-N] tokens from text, collects resolved chips, and renders:
- * - clean text (no tokens inline)
+ * Strips ALL citation-style tokens from text, collects resolved chips, and renders:
+ * - clean text (no inline tokens)
  * - a chips group at the end that reveals on hover of the parent .ci-citable wrapper
+ *
+ * Handled formats (all stripped from visible text):
+ *   [P1-2]          — correct format; resolved to a chip if source exists
+ *   [P1-2, P1-4]    — multi-ref; each resolved independently
+ *   [P4] / [P12]    — malformed (Gemini hallucination); stripped, no chip shown
  *
  * showFirst=true — first chip always visible (used only for the verdict)
  */
@@ -58,14 +66,16 @@ function WithCitations({ text, sources, products, showFirst = false }) {
   if (!text || !sources || !products) return <>{text}</>;
 
   const chips = [];
-  const regex = /\[(P\d+-\d+(?:,\s*P\d+-\d+)*)\]/gi;
+
+  // Matches both correct [P1-2, P1-4] and rogue [P4] formats so all are stripped
+  const regex = /\[(P\d+(?:-\d+)?(?:,\s*P\d+(?:-\d+)?)*)\]/gi;
 
   const cleanText = text.replace(regex, (_, refs) => {
     refs.split(',').forEach((ref) => {
       const resource = resolveRef(ref, sources, products);
-      if (resource) chips.push(resource);
+      if (resource) chips.push(resource); // only push if resolvable
     });
-    return '';
+    return ''; // always strip the token from visible text
   }).replace(/\s{2,}/g, ' ').trim();
 
   if (!chips.length) return <>{cleanText}</>;
@@ -347,10 +357,11 @@ function WhatPeopleSaying({ products, sources }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function ComparisonInsights({ products, condition = 'new', compareKey = 0 }) {
-  const [status,   setStatus]   = useState('idle');
-  const [insights, setInsights] = useState(null);
-  const [error,    setError]    = useState(null);
-  const [tab,      setTab]      = useState('overview');
+  const [status,    setStatus]    = useState('idle');
+  const [insights,  setInsights]  = useState(null);
+  const [error,     setError]     = useState(null);
+  const [tab,       setTab]       = useState('overview');
+  const [collapsed, setCollapsed] = useState(false);
   const prevKeyRef      = useRef(0);
   const insightIdsRef   = useRef(''); // product IDs that generated current insights
 
@@ -396,15 +407,31 @@ export default function ComparisonInsights({ products, condition = 'new', compar
 
   return (
     <section className="ci-section">
-      {/* Header */}
-      <div className="ci-header">
+      {/* Header — full row is the collapse trigger */}
+      <div
+        className="ci-header"
+        role="button"
+        tabIndex={0}
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? 'Expand Our Take' : 'Collapse Our Take'}
+        onClick={() => setCollapsed((c) => !c)}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setCollapsed((c) => !c)}
+      >
         <div className="ci-header__left">
           <span className="ci-header__icon" aria-hidden="true">✦</span>
           <h2 className="ci-header__title">Our Take</h2>
+          {insights?.winner && (
+            <span className="ci-winner-badge">
+              Our winner: <strong>{products.find((p) => p.id === insights.winner)?.name ?? insights.winner}</strong>
+            </span>
+          )}
+          <span className={`ci-header__chevron${collapsed ? ' ci-header__chevron--up' : ''}`} aria-hidden="true">
+            ‹
+          </span>
         </div>
         <button
           className={`ci-generate-btn${status === 'loading' ? ' ci-generate-btn--loading' : ''}`}
-          onClick={handleGenerate}
+          onClick={(e) => { e.stopPropagation(); handleGenerate(); }}
           disabled={status === 'loading'}
         >
           {status === 'loading' ? (
@@ -414,6 +441,10 @@ export default function ComparisonInsights({ products, condition = 'new', compar
           )}
         </button>
       </div>
+
+      {/* Collapsible body */}
+      <div className={`ci-collapse${collapsed ? ' ci-collapse--closed' : ''}`}>
+        <div className="ci-collapse__inner">
 
       {status === 'loading' && <InsightSkeleton />}
       {status === 'error'   && <p className="ci-error">{error}</p>}
@@ -483,6 +514,9 @@ export default function ComparisonInsights({ products, condition = 'new', compar
           )}
         </>
       )}
+
+        </div>{/* /.ci-collapse__inner */}
+      </div>{/* /.ci-collapse */}
     </section>
   );
 }

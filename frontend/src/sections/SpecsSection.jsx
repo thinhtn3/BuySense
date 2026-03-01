@@ -123,7 +123,10 @@ export default function SpecsSection({ products }) {
   return (
     <TooltipProvider delayDuration={200}>
       <section className="specs-section">
-        <h2 className="specs-heading">Specs at a Glance</h2>
+        <div className="section-heading">
+          <span className="section-heading__icon" aria-hidden="true">✦</span>
+          <h2>Specs at a Glance</h2>
+        </div>
 
         <div className="specs-card">
           <table className="specs-table">

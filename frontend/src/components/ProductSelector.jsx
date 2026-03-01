@@ -55,9 +55,11 @@ const CATEGORY_LABELS = {
 };
 
 export default function ProductSelector({ label, value, products, onSelect, onClear, onRemove, removable }) {
-  const [query,   setQuery]   = useState('');
-  const [isOpen,  setIsOpen]  = useState(false);
-  const [focused, setFocused] = useState(-1);
+  const [query,     setQuery]     = useState('');
+  const [isOpen,    setIsOpen]    = useState(false);
+  const [focused,   setFocused]   = useState(-1);
+  const [adding,    setAdding]    = useState(false);
+  const [addError,  setAddError]  = useState(null);
   const containerRef = useRef(null);
   const inputRef     = useRef(null);
   const listRef      = useRef(null);
@@ -109,7 +111,28 @@ export default function ProductSelector({ label, value, products, onSelect, onCl
     setQuery('');
     setIsOpen(false);
     setFocused(-1);
+    setAddError(null);
     inputRef.current?.blur();
+  }
+
+  async function handleAddCustom() {
+    if (!query.trim() || adding) return;
+    setAdding(true);
+    setAddError(null);
+    try {
+      const res = await fetch('/api/products/custom', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ name: query.trim() }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? 'Failed to add product.');
+      selectProduct(body.product);
+    } catch (err) {
+      setAddError(err.message);
+    } finally {
+      setAdding(false);
+    }
   }
 
   function handleChevronClick() {
@@ -161,28 +184,59 @@ export default function ProductSelector({ label, value, products, onSelect, onCl
       {isOpen && (
         <ul className="selector-dropdown" ref={listRef} role="listbox">
           {filtered.length === 0 ? (
-            <li className="selector-empty">No products found</li>
+            query.trim() ? (
+              <>
+                <li className="selector-empty">No products found for "{query}"</li>
+                <li
+                  className={`selector-custom-option${adding ? ' selector-custom-option--loading' : ''}`}
+                  onPointerDown={(e) => { e.preventDefault(); handleAddCustom(); }}
+                >
+                  <span className="selector-custom-option__icon">+</span>
+                  <span className="selector-custom-option__text">
+                    {adding ? 'Searching…' : <>Add <strong>"{query}"</strong> as custom product</>}
+                  </span>
+                </li>
+                {addError && (
+                  <li className="selector-custom-error">{addError}</li>
+                )}
+              </>
+            ) : (
+              <li className="selector-empty">Start typing to search…</li>
+            )
           ) : (
-            filtered.slice(0, 40).map((product, idx) => (
-              <li
-                key={product.id}
-                className={`selector-option ${idx === focused ? 'selector-option--focused' : ''}`}
-                role="option"
-                aria-selected={value?.id === product.id}
-                onPointerDown={(e) => { e.preventDefault(); selectProduct(product); }}
-              >
-                <span className="selector-option-icon-emoji">
-                  {CATEGORY_EMOJI[product.category] ?? '📦'}
-                </span>
-                <span className="selector-option-name">
-                  <Highlight text={product.name} query={query} />
-                </span>
-                <span className="selector-option-meta">
-                  {product.brand} · {CATEGORY_LABELS[product.category] ?? product.category}
-                  {product.year ? ` · ${product.year}` : ''}
-                </span>
-              </li>
-            ))
+            <>
+              {filtered.slice(0, 40).map((product, idx) => (
+                <li
+                  key={product.id}
+                  className={`selector-option ${idx === focused ? 'selector-option--focused' : ''}`}
+                  role="option"
+                  aria-selected={value?.id === product.id}
+                  onPointerDown={(e) => { e.preventDefault(); selectProduct(product); }}
+                >
+                  <span className="selector-option-icon-emoji">
+                    {CATEGORY_EMOJI[product.category] ?? '📦'}
+                  </span>
+                  <span className="selector-option-name">
+                    <Highlight text={product.name} query={query} />
+                  </span>
+                  <span className="selector-option-meta">
+                    {product.brand} · {CATEGORY_LABELS[product.category] ?? product.category}
+                    {product.year ? ` · ${product.year}` : ''}
+                  </span>
+                </li>
+              ))}
+              {query.trim() && (
+                <li
+                  className={`selector-custom-option${adding ? ' selector-custom-option--loading' : ''}`}
+                  onPointerDown={(e) => { e.preventDefault(); handleAddCustom(); }}
+                >
+                  <span className="selector-custom-option__icon">+</span>
+                  <span className="selector-custom-option__text">
+                    {adding ? 'Searching…' : <>Add <strong>"{query}"</strong> as custom product</>}
+                  </span>
+                </li>
+              )}
+            </>
           )}
         </ul>
       )}

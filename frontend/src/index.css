@@ -241,6 +241,12 @@ body {
   align-items: flex-start;
 }
 
+.selector-motion-wrap {
+  flex: 1 1 260px;
+  min-width: 220px;
+  max-width: 380px;
+}
+
 .status-text {
   text-align: center;
   color: var(--bs-text-muted);
@@ -289,9 +295,7 @@ body {
    ═══════════════════════════════════════════════════════════════ */
 .selector-wrapper {
   position: relative;
-  flex: 1 1 260px;
-  min-width: 220px;
-  max-width: 380px;
+  width: 100%;
 }
 
 /* Label row */
@@ -425,6 +429,52 @@ body {
   text-align: center;
 }
 
+/* Custom "add" option at the bottom of the dropdown */
+.selector-custom-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-top: 1px solid var(--bs-border);
+  background: #f9fafb;
+  transition: background 0.15s;
+}
+.selector-custom-option:hover,
+.selector-custom-option:focus {
+  background: #eef8f6;
+}
+.selector-custom-option--loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.selector-custom-option__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bs-accent);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.selector-custom-option__text {
+  font-size: 0.875rem;
+  color: var(--bs-text);
+}
+.selector-custom-option__text strong {
+  color: var(--bs-accent);
+}
+.selector-custom-error {
+  padding: 8px 14px 12px;
+  font-size: 0.8rem;
+  color: #d94f4f;
+  background: #fff5f5;
+}
+
 /* Dropdown options */
 .selector-option {
   display: flex;
@@ -475,6 +525,30 @@ body {
 /* ═══════════════════════════════════════════════════════════════
    Specs Section
    ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   Shared section heading — used by Specs, Resources, Listings
+   Matches the icon + title pattern inside ci-header and price-comparison
+   ═══════════════════════════════════════════════════════════════ */
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.section-heading h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--bs-text);
+  margin: 0;
+}
+
+.section-heading__icon {
+  font-size: 1rem;
+  color: var(--bs-accent);
+  line-height: 1;
+}
+
 .specs-section {
   width: 100%;
   max-width: 960px;
@@ -488,11 +562,7 @@ body {
 }
 
 .specs-heading {
-  font-family: var(--bs-font-sans);
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--bs-text);
-  margin-bottom: 14px;
+  /* kept for backwards compat — use .section-heading going forward */
 }
 
 .specs-card {
@@ -837,7 +907,7 @@ body {
   background: var(--bs-text);
   color: var(--bs-card);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--bs-radius-card);
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
@@ -935,10 +1005,7 @@ body {
 }
 
 .resources-heading {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--bs-text);
-  margin: 0 0 20px;
+  /* kept for backwards compat — use .section-heading going forward */
 }
 
 /* Row of cards — one per product */
@@ -1115,6 +1182,17 @@ body {
   justify-content: space-between;
   padding: 18px 24px;
   border-bottom: 1px solid var(--bs-border);
+  transition: border-color 0.28s ease, background 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ci-header:hover {
+  background: rgba(0, 0, 0, 0.018);
+}
+
+.ci-section:has(.ci-collapse--closed) .ci-header {
+  border-bottom-color: transparent;
 }
 
 .ci-header__left {
@@ -1136,10 +1214,58 @@ body {
   margin: 0;
 }
 
+.ci-winner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2ABFA3 0%, #1ea98e 100%);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  margin-left: 4px;
+}
+
+.ci-winner-badge strong {
+  font-weight: 700;
+}
+
+.ci-header__chevron {
+  font-size: 1.1rem;
+  color: var(--bs-text-subtle);
+  line-height: 1;
+  display: inline-block;
+  transform: rotate(-90deg);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 2px;
+}
+
+.ci-header__chevron--up {
+  transform: rotate(90deg);
+}
+
 .ci-header__hint {
   font-size: 0.8125rem;
   color: var(--bs-text-subtle);
   margin-left: 4px;
+}
+
+/* ─── Collapse / expand ─────────────────────────────────────────────────────── */
+.ci-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ci-collapse--closed {
+  grid-template-rows: 0fr;
+}
+
+.ci-collapse__inner {
+  overflow: hidden;
 }
 
 /* Generate button */
@@ -1148,7 +1274,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 7px 16px;
-  border-radius: 999px;
+  border-radius: var(--bs-radius-card);
   border: 1.5px solid var(--bs-accent);
   background: transparent;
   color: var(--bs-accent);
@@ -1235,62 +1361,76 @@ body {
 
 /* ─── Citation chip ─── */
 /* ─── Citable wrapper — chips hidden until hover ─── */
+/* Citable sentence — subtle dotted underline tells the user "hover me" */
 .ci-citable {
   display: inline;
+  text-decoration: underline dotted rgba(42, 191, 163, 0.45);
+  text-underline-offset: 3px;
+  cursor: default;
 }
 
 .ci-chips-group {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  margin-left: 5px;
+  gap: 4px;
+  margin-left: 6px;
   vertical-align: middle;
 }
 
+/* Chips are always rendered but collapsed — scale(0) hides without layout shift */
 .ci-chip-wrap {
   display: inline-flex;
   opacity: 0;
-  transform: translateY(2px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform: scale(0.6);
+  transform-origin: left center;
+  transition: opacity 0.18s ease 0.15s, transform 0.18s ease 0.15s;
   pointer-events: none;
 }
 
-/* Show all chips on hover of the citable ancestor */
+/* On hover: reveal all chips instantly */
 .ci-citable:hover .ci-chip-wrap {
   opacity: 1;
-  transform: translateY(0);
+  transform: scale(1);
+  transition: opacity 0.14s ease 0s, transform 0.14s ease 0s;
   pointer-events: auto;
 }
 
-/* First chip always visible in verdict */
+/* First chip always visible (verdict sentence) */
 .ci-chip-wrap--visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: scale(1);
   pointer-events: auto;
+  transition: none;
 }
 
-/* ─── Citation chip ─── */
+/* ─── Citation chip pill ─── */
 .ci-citation {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 5px;
-  min-width: 20px;
-  height: 18px;
-  border-radius: 20px;
+  gap: 3px;
+  padding: 0 7px;
+  min-width: 24px;
+  height: 22px;
+  border-radius: 999px;
   text-decoration: none;
   flex-shrink: 0;
-  transition: filter var(--bs-transition);
+  transition: filter 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.14);
 }
-.ci-citation:hover { filter: brightness(1.12); }
+.ci-citation:hover {
+  filter: brightness(1.12);
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+}
 .ci-citation__img {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   object-fit: cover;
 }
 .ci-citation__abbrev {
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -1676,10 +1816,7 @@ body {
 }
 
 .ls-heading {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--bs-text);
-  margin: 0 0 20px;
+  /* kept for backwards compat — use .section-heading going forward */
 }
 
 .ls-products {
@@ -2007,13 +2144,13 @@ body {
 
 .lm-close-btn {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1px solid var(--bs-border);
   background: var(--bs-hover-bg);
   color: var(--bs-text-muted);
-  font-size: 0.75rem;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2207,7 +2344,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.3rem;
   color: var(--bs-text-muted);
   padding: 4px 6px;
   border-radius: 6px;
@@ -2467,8 +2604,8 @@ body {
   background: rgba(255, 255, 255, 0.88);
   border: none;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2477,6 +2614,10 @@ body {
   transition: color 0.15s, background 0.15s, transform 0.1s;
   backdrop-filter: blur(4px);
   opacity: 0;
+}
+.wl-btn svg {
+  width: 18px;
+  height: 18px;
 }
 .ls-card:hover .wl-btn,
 .lm-card:hover .wl-btn {
@@ -2593,8 +2734,8 @@ body {
   border: none;
   cursor: pointer;
   color: var(--bs-text-muted);
-  font-size: 1rem;
-  padding: 4px;
+  font-size: 1.3rem;
+  padding: 4px 6px;
   border-radius: 4px;
   transition: background 0.15s;
 }
@@ -2633,6 +2774,9 @@ body {
   gap: 14px;
   transition: background 0.15s;
   border-bottom: 1px solid #fafafa;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 .wp-item:hover { background: #f9f9f9; }
 .wp-item:last-child { border-bottom: none; }
@@ -2705,9 +2849,10 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  color: #ccc;
-  font-size: 0.8rem;
-  padding: 4px;
+  color: #bbb;
+  font-size: 1.1rem;
+  padding: 6px;
+  line-height: 1;
   transition: color 0.15s;
 }
 .wp-item-remove:hover { color: #e25c5c; }

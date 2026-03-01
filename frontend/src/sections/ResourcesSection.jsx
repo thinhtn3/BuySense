@@ -109,7 +109,10 @@ export default function ResourcesSection({ products, resourceData }) {
 
   return (
     <section className="resources-section">
-      <h2 className="resources-heading">Resources &amp; Reviews</h2>
+      <div className="section-heading">
+        <span className="section-heading__icon" aria-hidden="true">✦</span>
+        <h2>Resources &amp; Reviews</h2>
+      </div>
 
       <div className="resources-cards-row">
         {products.map((p) => (

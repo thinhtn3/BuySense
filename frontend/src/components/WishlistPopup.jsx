@@ -48,7 +48,13 @@ export default function WishlistPopup() {
                 ) : (
                   <div className="wp-list">
                     {items.map((item) => (
-                      <div key={item.listing_url} className="wp-item">
+                      <a
+                        key={item.listing_url}
+                        href={item.listing_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="wp-item"
+                      >
                         <div className="wp-item-img-wrap">
                           {item.image_url ? (
                             <img src={item.image_url} alt="" className="wp-item-img" />
@@ -57,14 +63,7 @@ export default function WishlistPopup() {
                           )}
                         </div>
                         <div className="wp-item-info">
-                          <a
-                            href={item.listing_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="wp-item-title"
-                          >
-                            {item.listing_title}
-                          </a>
+                          <span className="wp-item-title">{item.listing_title}</span>
                           <div className="wp-item-meta">
                             <span className="wp-item-retailer">{item.retailer}</span>
                           </div>
@@ -73,13 +72,13 @@ export default function WishlistPopup() {
                           <span className="wp-item-price">{fmt(item.price)}</span>
                           <button
                             className="wp-item-remove"
-                            onClick={() => toggle({ url: item.listing_url })}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle({ url: item.listing_url }); }}
                             title="Remove from wishlist"
                           >
                             ✕
                           </button>
                         </div>
-                      </div>
+                      </a>
                     ))}
                   </div>
                 )}

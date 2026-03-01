@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import CategoryFilter from '@/components/CategoryFilter.jsx';
 import ProductSelector from '@/components/ProductSelector.jsx';
 
@@ -69,18 +70,28 @@ export default function ProductSelection({ onSelectionsChange }) {
 
         {!loading && !error && (
           <div className="selectors-row">
-            {selectors.map((s, i) => (
-              <ProductSelector
-                key={s.id}
-                label={`PRODUCT ${LABELS[i]}`}
-                value={s.value}
-                products={visibleProducts}
-                onSelect={(product) => handleSelect(s.id, product)}
-                onClear={() => handleClear(s.id)}
-                onRemove={() => removeSelector(s.id)}
-                removable={i > 0}
-              />
-            ))}
+            <AnimatePresence initial={false}>
+              {selectors.map((s, i) => (
+                <motion.div
+                  key={s.id}
+                  className="selector-motion-wrap"
+                  initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                  animate={{ opacity: 1, scale: 1,    y: 0  }}
+                  exit={{    opacity: 0, scale: 0.92, y: 8  }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 28, mass: 0.8 }}
+                >
+                  <ProductSelector
+                    label={`PRODUCT ${LABELS[i]}`}
+                    value={s.value}
+                    products={visibleProducts}
+                    onSelect={(product) => handleSelect(s.id, product)}
+                    onClear={() => handleClear(s.id)}
+                    onRemove={() => removeSelector(s.id)}
+                    removable={i > 0}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
 
             {selectors.length < LABELS.length && (
               <button className="add-selector-btn" onClick={addSelector}>

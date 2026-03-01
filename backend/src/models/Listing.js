@@ -17,23 +17,23 @@
  */
 
 export function createListing(data) {
-  const price      = data.price;
-  const period     = data.period ?? null;
+  const price = data.price;
+  const period = data.period ?? null;
   const finalPrice = period ? price * period : price;
 
   return {
-    id:           data.id,
-    productId:    data.productId,
-    retailer:     data.retailer,
-    condition:    data.condition,
+    id: data.id,
+    productId: data.productId,
+    retailer: data.retailer,
+    condition: data.condition,
     price,
     period,
     finalPrice,
-    url:          data.url          ?? null,
-    title:        data.title        ?? null,
-    imageUrl:     data.imageUrl     ?? null,
+    url: data.url ?? null,
+    title: data.title ?? null,
+    imageUrl: data.imageUrl ?? null,
     freeShipping: data.freeShipping ?? false,
-    label:        data.label        ?? null,
-    labelReason:  data.labelReason  ?? null,
+    label: data.label ?? null,
+    labelReason: data.labelReason ?? null,
   };
 }

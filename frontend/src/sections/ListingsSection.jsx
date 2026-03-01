@@ -178,7 +178,10 @@ export default function ListingsSection({ products, priceResults }) {
 
   return (
     <section className="ls-section">
-      <h2 className="ls-heading">Where to Buy</h2>
+      <div className="section-heading">
+        <span className="section-heading__icon" aria-hidden="true">✦</span>
+        <h2>Where to Buy</h2>
+      </div>
 
       <div className="ls-products">
         {products.map((p) => (
