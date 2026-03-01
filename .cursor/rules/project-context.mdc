@@ -1,0 +1,116 @@
+---
+description: BuySense project overview, vision, scope, and core logic
+alwaysApply: true
+---
+
+# BuySense — Project Context
+
+## Problem
+
+Big-purchase electronics research is fragmented: users open dozens of tabs across review sites, retailer pages, and reseller listings, do mental or spreadsheet math, and still end up with decision fatigue, over-optimization, buyer's remorse, or hidden risks in used purchases.
+
+## Vision
+
+A centralized platform that collapses all those tabs and gut-checks into a **single decision page**. The flow starts with a choice of *product type → specific model → new vs. used*, so users are never overwhelmed by raw listings first.
+
+## Target Categories (Electronics Only)
+
+Phones, Laptops, Headphones, Sound Systems, TVs, GPUs
+
+## Marketplaces & Data Sources
+
+| Channel | Sources |
+|---------|---------|
+| New | Best Buy API, Amazon API, Walmart (TBD) |
+| Used | eBay API, Facebook Marketplace (third-party API) |
+| Specs & Reviews | RAG over YouTube transcripts, Reddit; LLM summaries |
+
+## Core User Flow
+
+1. **Compare Products** (show data)
+   - User selects two models (e.g. M4 MacBook Pro 13" vs M5 MacBook Air 13")
+   - Displays: market price per model, price delta, specs, plain-language summaries
+   - User can toggle New vs. Used (like-new / heavy-use); shows used prices and new-vs-used insights
+
+2. **Decision Summary** (show answers)
+   - Worth it under price X?
+   - Is new pricing fair?
+   - Battery/condition caveats
+   - Regret risk level
+
+3. **Listings** (show deals)
+   - Ranked best → worst; filterable by price
+   - Each listing labeled: **Great Deal**, **Fair Price**, or **Overpriced**
+   - Links to external listing (cart system if time permits)
+
+## Decision Heuristics (v1 — Deterministic)
+
+| Heuristic | Rule |
+|-----------|------|
+| Used Worth-It Threshold | Not worth it if savings < 10%; worth it if savings > 15% and condition risk is low |
+| New Price Fairness | Fair if within ±10% of market median; overpriced if >20% above |
+| Upgrade Justification | If price delta > $150 and reviewer consensus is "incremental" → recommend skip |
+| Regret Risk | Combines price, condition risk, return policy, review volatility |
+| Listing Quality Label | Based on price band + condition + seller type |
+
+Heuristics produce **decision signals**, not raw numeric scores.
+
+## Review Intelligence
+
+Uses **RAG** to retrieve and summarize product specs and reviews.
+- Specs: generalized, basic spec data
+- Reviews: YouTube transcripts, Reddit threads
+
+## UI/UX Principle
+
+Clean, minimal UI that reduces cognitive load. The goal is a single-page decision view — not an overwhelming listing feed. Target track: **best UI/UX**.
+
+## UI Design Reference (Screenshots)
+
+The following mockup screenshots define the intended look and feel. Match this design closely when building UI.
+
+### Screenshot 1 — Hero + Product Selector + Price Comparison
+`/Users/tonynguyen/.cursor/projects/Users-tonynguyen-Desktop-BuySense/assets/Screenshot_2026-02-28_at_6.53.00_PM-2bb64365-4ea8-4a01-814c-89687138dde1.png`
+
+- Light gray (`#F0F2F0` approx) full-page background
+- Large centered headline: **"Compare, then shop."** — serif font, bold, ~36px
+- Subtitle in muted gray beneath it
+- Two product selector dropdowns side by side labeled **PRODUCT A** / **PRODUCT B**, each showing product name + storage/year metadata with a small device icon
+- Condition toggle pill below: **New · Like New · Used** — active state uses a white pill with subtle shadow on the gray bar
+- **Price Comparison** card below toggle:
+  - Section header with a teal/green trend icon and label "Price Comparison · New"
+  - Two white cards side by side with product name, large bold price, and "New avg" label underneath
+  - A small "→ vs" separator between cards
+  - A muted insight row at the bottom: "iPhone 16 is **$170** cheaper (17% less)" — dollar amount in teal/green
+
+### Screenshot 2 — Specs Table + "What We Think" + Listings
+`/Users/tonynguyen/.cursor/projects/Users-tonynguyen-Desktop-BuySense/assets/Screenshot_2026-02-28_at_6.53.10_PM-8bc7138d-2fb9-45e1-8dec-077b97014056.png`
+
+- **Specs at a Glance** table: clean alternating-row table, columns are Spec / Model A / Model B; rows: Chip, Camera, Battery, Display
+- **What We Think** section: two insight cards with icons (green trend arrow, yellow lightbulb), plain-language sentences summarizing the decision
+- **Listings** section: two columns — one per product
+  - Each listing card: retailer logo/icon on left, condition badge + **Fair Price** / **Great Deal** / **Overpriced** label (orange pill for Fair Price), price right-aligned, shipping info below price
+
+### Screenshot 3 — Listings (continued) + Footer
+`/Users/tonynguyen/.cursor/projects/Users-tonynguyen-Desktop-BuySense/assets/Screenshot_2026-02-28_at_6.53.17_PM-833d5f54-cdfb-4ab2-8a31-7733988f9f0b.png`
+
+- Continuation of two-column listings (Apple Store, Amazon, Best Buy per product)
+- Footer: muted small text — "BuySense · Decision-first shopping · Prices are illustrative"
+
+### Key Design Tokens (inferred)
+
+| Token | Value |
+|-------|-------|
+| Background | Light gray ~`#EEF0EE` |
+| Card background | White `#FFFFFF` |
+| Primary text | Near-black `#111111` |
+| Muted text | Gray `#888888` |
+| Accent (savings/teal) | `#2ABFA3` approx |
+| Fair Price badge | Orange `#F5A623` approx |
+| Font style | Serif for headlines, sans-serif for body |
+| Border radius | ~12px on cards |
+| Spacing | Generous padding, lots of whitespace |
+
+## If Time Permits
+
+- Cart system: users add listings and are linked to sellers
