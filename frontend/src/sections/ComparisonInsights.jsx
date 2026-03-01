@@ -360,8 +360,8 @@ export default function ComparisonInsights({ products, condition = 'new', compar
   useEffect(() => {
     if (compareKey > 0 && compareKey !== prevKeyRef.current && products.length > 0) {
       prevKeyRef.current = compareKey;
-      if (status === 'ready' && insightIdsRef.current === currentIds) return;
-      handleGenerate();
+      // if (status === 'ready' && insightIdsRef.current === currentIds) return;
+      // handleGenerate();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareKey]);
@@ -410,7 +410,7 @@ export default function ComparisonInsights({ products, condition = 'new', compar
           {status === 'loading' ? (
             <><span className="ci-btn-spinner" />Generating…</>
           ) : (
-            'Regenerate ↺'
+            status === 'ready' ? 'Regenerate ↺' : 'Generate Insights →'
           )}
         </button>
       </div>

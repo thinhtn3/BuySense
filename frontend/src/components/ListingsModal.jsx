@@ -1,5 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useWishlist } from '@/lib/wishlist.js';
+import AuthModal from '@/components/AuthModal.jsx';
 
 const LABEL_CONFIG = {
   great_deal: { text: 'Great Deal', cls: 'ls-badge--great' },
@@ -12,8 +15,15 @@ function fmt(n) {
   return `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function ModalListingCard({ listing, isCheapest, index }) {
-  const lbl = LABEL_CONFIG[listing.label];
+function ModalListingCard({ listing, isCheapest, index, isSaved, onWishlist }) {
+  const lbl    = LABEL_CONFIG[listing.label];
+  const active = isSaved(listing.url);
+
+  function handleWishlist(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    onWishlist(listing);
+  }
 
   return (
     <motion.a
@@ -37,6 +47,18 @@ function ModalListingCard({ listing, isCheapest, index }) {
         }
         {isCheapest && (
           <span className="lm-card__best-pill">Cheapest</span>
+        )}
+        {listing.url && (
+          <button
+            className={`wl-btn wl-btn--modal${active ? ' wl-btn--saved' : ''}`}
+            onClick={handleWishlist}
+            aria-label={active ? 'Remove from wishlist' : 'Save to wishlist'}
+            title={active ? 'Remove from wishlist' : 'Save to wishlist'}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
         )}
       </div>
 
@@ -79,6 +101,9 @@ function ModalListingCard({ listing, isCheapest, index }) {
 }
 
 export default function ListingsModal({ product, listings, condition, onClose }) {
+  const { isSaved, toggle, isLoggedIn } = useWishlist();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
   // Close on Escape
   useEffect(() => {
     function onKey(e) {
@@ -95,64 +120,78 @@ export default function ListingsModal({ product, listings, condition, onClose })
     return () => { document.body.style.overflow = prev; };
   }, []);
 
+  function handleWishlist(listing) {
+    if (!isLoggedIn) { setAuthModalOpen(true); return; }
+    toggle(listing);
+  }
+
   const sorted     = [...listings].sort((a, b) => (a.finalPrice ?? a.price) - (b.finalPrice ?? b.price));
   const cheapestId = sorted[0]?.id;
   const condLabel  = condition === 'used' ? 'Used' : 'New';
 
   return (
-    <AnimatePresence>
-      {/* Backdrop */}
-      <motion.div
-        className="lm-backdrop"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.28, ease: 'easeOut' }}
-        onClick={onClose}
-      />
+    <>
+      <AnimatePresence>
+        {/* Backdrop */}
+        <motion.div
+          className="lm-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.28, ease: 'easeOut' }}
+          onClick={onClose}
+        />
 
-      {/* Panel */}
-      <motion.div
-        className="lm-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`All listings for ${product.name}`}
-        initial={{ opacity: 0, scale: 0.88 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.92 }}
-        transition={{
-          duration: 0.32,
-          ease: [0.16, 1, 0.3, 1],
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="lm-header">
-          <div className="lm-header__left">
-            <span className="lm-header__title">{product.name}</span>
-            <span className="lm-header__meta">
-              {condLabel} · {sorted.length} listing{sorted.length !== 1 ? 's' : ''}
-            </span>
+        {/* Panel */}
+        <motion.div
+          className="lm-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`All listings for ${product.name}`}
+          initial={{ opacity: 0, scale: 0.88 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.92 }}
+          transition={{
+            duration: 0.32,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="lm-header">
+            <div className="lm-header__left">
+              <span className="lm-header__title">{product.name}</span>
+              <span className="lm-header__meta">
+                {condLabel} · {sorted.length} listing{sorted.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <button className="lm-close-btn" onClick={onClose} aria-label="Close">
+              ✕
+            </button>
           </div>
-          <button className="lm-close-btn" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
-        </div>
 
-        {/* Scrollable grid */}
-        <div className="lm-body">
-          <div className="lm-grid">
-            {sorted.map((l, i) => (
-              <ModalListingCard
-                key={l.id}
-                listing={l}
-                isCheapest={l.id === cheapestId}
-                index={i}
-              />
-            ))}
+          {/* Scrollable grid */}
+          <div className="lm-body">
+            <div className="lm-grid">
+              {sorted.map((l, i) => (
+                <ModalListingCard
+                  key={l.id}
+                  listing={l}
+                  isCheapest={l.id === cheapestId}
+                  index={i}
+                  isSaved={isSaved}
+                  onWishlist={handleWishlist}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      </motion.div>
-    </AnimatePresence>
+        </motion.div>
+      </AnimatePresence>
+
+      {authModalOpen && createPortal(
+        <AuthModal onClose={() => setAuthModalOpen(false)} />,
+        document.body
+      )}
+    </>
   );
 }

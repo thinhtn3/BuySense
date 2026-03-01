@@ -19,11 +19,13 @@ export async function fetchListingsFromSerp(product, condition = 'new') {
   const prefix = CONDITION_PREFIX[cond];
   const query  = [prefix, product.brand, product.name].filter(Boolean).join(' ');
 
+  const tbs = cond === 'new' ? 'p_ord:p,pd_cond:1' : 'p_ord:p,pd_cond:2';
+
   const params = new URLSearchParams({
     engine:  'google_shopping',
     q:       query,
     api_key: apiKey,
-    tbs:     'p_ord:p',   // sort by price low → high
+    tbs,
     num:     '20',
     gl:      'us',
     hl:      'en',

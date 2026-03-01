@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import ListingsModal from '@/components/ListingsModal.jsx';
+import { useWishlist } from '@/lib/wishlist.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import AuthModal from '@/components/AuthModal.jsx';
 
 const LABEL_CONFIG = {
   great_deal: { text: 'Great Deal', cls: 'ls-badge--great' },
@@ -17,7 +20,30 @@ function fmt(n) {
   return `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function ListingCard({ listing, isCheapest }) {
+function WishlistBtn({ listing, isSaved, onToggle }) {
+  const active = isSaved(listing.url);
+
+  function handleClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggle(listing);
+  }
+
+  return (
+    <button
+      className={`wl-btn${active ? ' wl-btn--saved' : ''}`}
+      onClick={handleClick}
+      aria-label={active ? 'Remove from wishlist' : 'Save to wishlist'}
+      title={active ? 'Remove from wishlist' : 'Save to wishlist'}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      </svg>
+    </button>
+  );
+}
+
+function ListingCard({ listing, isCheapest, isSaved, onWishlist }) {
   const lbl = LABEL_CONFIG[listing.label];
 
   return (
@@ -36,6 +62,9 @@ function ListingCard({ listing, isCheapest }) {
           {isCheapest && <span className="ls-card__best-pill">Cheapest</span>}
           {lbl && <span className={`ls-badge ${lbl.cls}`}>{lbl.text}</span>}
         </div>
+        {listing.url && (
+          <WishlistBtn listing={listing} isSaved={isSaved} onToggle={onWishlist} />
+        )}
       </div>
 
       <p className="ls-card__title">
@@ -68,7 +97,7 @@ function ListingCard({ listing, isCheapest }) {
   );
 }
 
-function ProductListingsGrid({ product, listings, condition, totalProducts }) {
+function ProductListingsGrid({ product, listings, condition, totalProducts, isSaved, onWishlist }) {
   const [modalOpen, setModalOpen] = useState(false);
 
   if (!listings?.length) return null;
@@ -97,6 +126,8 @@ function ProductListingsGrid({ product, listings, condition, totalProducts }) {
                   key={l.id}
                   listing={l}
                   isCheapest={l.id === cheapestId}
+                  isSaved={isSaved}
+                  onWishlist={onWishlist}
                 />
               ))}
             </div>
@@ -129,6 +160,9 @@ function ProductListingsGrid({ product, listings, condition, totalProducts }) {
 }
 
 export default function ListingsSection({ products, priceResults }) {
+  const { isSaved, toggle, isLoggedIn } = useWishlist();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
   if (!products.length || !priceResults?.length) return null;
 
   const byProduct = Object.fromEntries(
@@ -136,6 +170,11 @@ export default function ListingsSection({ products, priceResults }) {
   );
 
   if (!priceResults.some((r) => r.listings?.length > 0)) return null;
+
+  function handleWishlist(listing) {
+    if (!isLoggedIn) { setAuthModalOpen(true); return; }
+    toggle(listing);
+  }
 
   return (
     <section className="ls-section">
@@ -149,9 +188,16 @@ export default function ListingsSection({ products, priceResults }) {
             listings={byProduct[p.id]?.listings}
             condition={byProduct[p.id]?.condition}
             totalProducts={products.length}
+            isSaved={isSaved}
+            onWishlist={handleWishlist}
           />
         ))}
       </div>
+
+      {authModalOpen && createPortal(
+        <AuthModal onClose={() => setAuthModalOpen(false)} />,
+        document.body
+      )}
     </section>
   );
 }

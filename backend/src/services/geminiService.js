@@ -18,7 +18,7 @@ function getClient() {
  */
 export async function chat(prompt, systemInstruction) {
   const model = getClient().getGenerativeModel({
-    model: "gemini-3-flash-preview",
+    model: "gemini-2.5-flash-lite",
     ...(systemInstruction ? { systemInstruction } : {}),
   });
 

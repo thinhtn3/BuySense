@@ -6,6 +6,7 @@ import ResourcesSection     from '@/sections/ResourcesSection.jsx';
 import ComparisonInsights   from '@/sections/ComparisonInsights.jsx';
 import ListingsSection      from '@/sections/ListingsSection.jsx';
 import ConditionToggle      from '@/components/ConditionToggle.jsx';
+import UserWidget           from '@/components/UserWidget.jsx';
 
 export default function App() {
   const [selectedProducts, setSelectedProducts] = useState([]);
@@ -77,6 +78,11 @@ export default function App() {
         <div className="page-bg page-bg--3" />
         <div className="page-bg page-bg--4" />
       </div>
+
+      <nav className="navbar">
+        <span className="navbar__logo">BuySense</span>
+        <UserWidget />
+      </nav>
 
       <header className="hero">
         <h1 className="hero-title">Compare, then shop.</h1>
