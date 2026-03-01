@@ -210,6 +210,7 @@ Rate limits apply to `/api/prices` (10 req/hr) and `/api/insights` (30 req/hr) p
 ## Key Design Decisions
 
 - **Decision-first, not data-first.** The UI leads with an opinionated verdict, not a raw listing feed.
+- **Natural purchasing flow.** The product layout intentionally mirrors the real-world purchasing process: *Select Product → Set Condition → Compare Prices → Read Specs → Get Expert Verdict → Browse Listings.*
 - **Listings are cached.** SerpAPI results are stored in Supabase for 24 hours to avoid hammering rate limits and to keep compare clicks fast.
 - **Citation chips.** AI-generated pros/cons cite their sources inline. Hover a dotted-underline sentence to reveal coloured source chips that link to the original review.
 - **Used market analysis.** When condition is Used or Like New, Gemini produces a battery risk rating, concrete watch-outs, and a seller checklist per product.
