@@ -141,6 +141,7 @@ router.post('/', async (req, res, next) => {
     const prompt = `You are a sharp, opinionated electronics buying advisor. Your job is to give buyers real confidence — or real warnings — not vague summaries.
 
 CITATION RULES (follow exactly, no exceptions):
+- Pros and cons must be SHORT — 4–6 words max, noun-phrase style (e.g. "Best-in-class camera", "Weak battery life"). No full sentences.
 - Every pro and con MUST be backed by a real source — a published review, spec sheet, or forum post.
 - Append [P<product_index>-<source_number>] at the END of any string that has a source.
   • product_index = which product (1 = first product listed, 2 = second, etc.)
@@ -161,10 +162,10 @@ TASK: Compare ${productNames} (condition: ${condition}) and respond with ONLY va
   "winner": "one of [${products.map((p) => `\\"${p.id}\\"`).join(', ')}] — the exact product ID of the clear winner, or null if it is genuinely a tie",
   "verdict": "2–3 sharp sentences. Be opinionated. Reference the winner by name. Include citations where applicable.",
   "pros": {
-${products.map((p, i) => `    "${p.id}": ["specific pro with [P${i + 1}-N] citation — required, not optional"]`).join(',\n')}
+${products.map((p, i) => `    "${p.id}": ["max 6 words + optional [P${i + 1}-N] citation — no full sentences, just the key point"]`).join(',\n')}
   },
   "cons": {
-${products.map((p, i) => `    "${p.id}": ["specific con with [P${i + 1}-N] citation — required, not optional"]`).join(',\n')}
+${products.map((p, i) => `    "${p.id}": ["max 6 words + optional [P${i + 1}-N] citation — no full sentences, just the key point"]`).join(',\n')}
   },
   "differences": ["Numbered plain-text difference — be specific, not vague. Max 4 items."],
   "bestFor": {
