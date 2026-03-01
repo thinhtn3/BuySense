@@ -26,7 +26,6 @@ function PriceCard({ product, priceData }) {
               {fmt(priceData.price)} × {priceData.period} mo
             </p>
           ) : null}
-          <p className="price-card__label">{CONDITION_LABELS[priceData.condition] ?? priceData.condition} avg.</p>
           {priceData.label && (
             <span className={`price-card__badge price-card__badge--${priceData.label}`}>
               {priceData.label === 'great_deal' ? 'Great Deal' : priceData.label === 'fair_price' ? 'Fair Price' : 'Overpriced'}

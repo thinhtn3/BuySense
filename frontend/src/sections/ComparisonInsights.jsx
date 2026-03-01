@@ -13,7 +13,7 @@ function abbrev(source) {
   return source.slice(0, 2).toUpperCase();
 }
 
-// ─── Citation chip — only rendered when a URL exists ─────────────────────────
+// ─── Citation chip ────────────────────────────────────────────────────────────
 function CitationChip({ resource }) {
   if (!resource?.url) return null;
   const chip = TYPE_CHIP[resource.type] ?? TYPE_CHIP.article;
@@ -47,31 +47,44 @@ function resolveRef(ref, sources, products) {
   return resource?.url ? resource : null;
 }
 
-// Parses "[P1-2]" or "[P1-2, P1-6]" tokens — renders chips, drops silently if no URL.
-function WithCitations({ text, sources, products }) {
+/**
+ * Strips all [P1-N] tokens from text, collects resolved chips, and renders:
+ * - clean text (no tokens inline)
+ * - a chips group at the end that reveals on hover of the parent .ci-citable wrapper
+ *
+ * showFirst=true — first chip always visible (used only for the verdict)
+ */
+function WithCitations({ text, sources, products, showFirst = false }) {
   if (!text || !sources || !products) return <>{text}</>;
 
-  const parts = [];
-  // Matches [P1-2] or [P1-2, P1-6] or [P1-2, P2-3] etc.
+  const chips = [];
   const regex = /\[(P\d+-\d+(?:,\s*P\d+-\d+)*)\]/gi;
-  let last = 0;
-  let match;
 
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > last) parts.push(text.slice(last, match.index));
-
-    const refs      = match[1].split(',');
-    const resources = refs.map((r) => resolveRef(r, sources, products)).filter(Boolean);
-
-    resources.forEach((resource, i) => {
-      parts.push(<CitationChip key={`${match.index}-${i}`} resource={resource} />);
+  const cleanText = text.replace(regex, (_, refs) => {
+    refs.split(',').forEach((ref) => {
+      const resource = resolveRef(ref, sources, products);
+      if (resource) chips.push(resource);
     });
+    return '';
+  }).replace(/\s{2,}/g, ' ').trim();
 
-    last = match.index + match[0].length;
-  }
+  if (!chips.length) return <>{cleanText}</>;
 
-  if (last < text.length) parts.push(text.slice(last));
-  return <>{parts}</>;
+  return (
+    <span className="ci-citable">
+      {cleanText}
+      <span className="ci-chips-group">
+        {chips.map((resource, i) => (
+          <span
+            key={i}
+            className={`ci-chip-wrap${showFirst && i === 0 ? ' ci-chip-wrap--visible' : ''}`}
+          >
+            <CitationChip resource={resource} />
+          </span>
+        ))}
+      </span>
+    </span>
+  );
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -114,7 +127,7 @@ function VerdictCard({ text, sources, products }) {
     <div className="ci-verdict">
       <span className="ci-verdict__bar" aria-hidden="true" />
       <p className="ci-verdict__text">
-        <WithCitations text={text} sources={sources} products={products} />
+        <WithCitations text={text} sources={sources} products={products} showFirst />
       </p>
     </div>
   );
@@ -338,12 +351,16 @@ export default function ComparisonInsights({ products, condition = 'new', compar
   const [insights, setInsights] = useState(null);
   const [error,    setError]    = useState(null);
   const [tab,      setTab]      = useState('overview');
-  const prevKeyRef = useRef(0);
+  const prevKeyRef      = useRef(0);
+  const insightIdsRef   = useRef(''); // product IDs that generated current insights
 
-  // Auto-trigger whenever Compare is clicked (compareKey increments)
+  const currentIds = products.map((p) => p.id).sort().join(',');
+
+  // Auto-trigger on Compare — skip if same products already have insights
   useEffect(() => {
     if (compareKey > 0 && compareKey !== prevKeyRef.current && products.length > 0) {
       prevKeyRef.current = compareKey;
+      if (status === 'ready' && insightIdsRef.current === currentIds) return;
       handleGenerate();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -369,6 +386,7 @@ export default function ComparisonInsights({ products, condition = 'new', compar
       }
 
       setInsights(await res.json());
+      insightIdsRef.current = currentIds;
       setStatus('ready');
     } catch (err) {
       setError(err.message);
@@ -382,7 +400,7 @@ export default function ComparisonInsights({ products, condition = 'new', compar
       <div className="ci-header">
         <div className="ci-header__left">
           <span className="ci-header__icon" aria-hidden="true">✦</span>
-          <h2 className="ci-header__title">AI Insights</h2>
+          <h2 className="ci-header__title">Our Take</h2>
         </div>
         <button
           className={`ci-generate-btn${status === 'loading' ? ' ci-generate-btn--loading' : ''}`}
@@ -410,6 +428,14 @@ export default function ComparisonInsights({ products, condition = 'new', compar
             >
               Overview
             </button>
+            {insights.usedInsight && condition !== 'new' && (
+              <button
+                className={`ci-tab${tab === 'used' ? ' ci-tab--active' : ''}`}
+                onClick={() => setTab('used')}
+              >
+                Used Market Analysis
+              </button>
+            )}
             <button
               className={`ci-tab${tab === 'people' ? ' ci-tab--active' : ''}`}
               onClick={() => setTab('people')}
@@ -432,18 +458,24 @@ export default function ComparisonInsights({ products, condition = 'new', compar
                 cons={insights.cons}
                 sources={insights.sources}
               />
+              <DifferencesList items={insights.differences} />
+              <BestForRow products={products} bestFor={insights.bestFor} />
+            </div>
+          )}
+
+          {/* Tab 2 — Used Market Analysis */}
+          {tab === 'used' && (
+            <div className="ci-body">
               <UsedRiskSection
                 products={products}
                 usedInsight={insights.usedInsight}
                 condition={condition}
                 sources={insights.sources}
               />
-              <DifferencesList items={insights.differences} />
-              <BestForRow products={products} bestFor={insights.bestFor} />
             </div>
           )}
 
-          {/* Tab 2 — What People Are Saying */}
+          {/* Tab 3 — What People Are Saying */}
           {tab === 'people' && (
             <div className="ci-body">
               <WhatPeopleSaying products={products} sources={insights.sources} />

@@ -61,6 +61,9 @@ function ModalListingCard({ listing, isCheapest, index }) {
               {fmt(listing.price)}/mo × {listing.period}
             </span>
           )}
+          {listing.labelReason && (
+            <span className="lm-card__reason">{listing.labelReason}</span>
+          )}
         </div>
         <div className="lm-card__footer-right">
           {listing.freeShipping && (

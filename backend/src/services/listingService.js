@@ -1,7 +1,7 @@
 import { randomUUID }            from 'crypto';
 import { supabase }              from '../lib/supabase.js';
 import { createListing }         from '../models/Listing.js';
-import { labelListing }          from './heuristicsService.js';
+import { labelListingWithReason } from './heuristicsService.js';
 import { fetchListingsFromSerp } from './serpApiService.js';
 
 // Re-fetch listings older than 24 hours
@@ -21,10 +21,13 @@ async function readFromSupabase(productId, condition) {
 }
 
 // ─── Persist SerpAPI results into Supabase ────────────────────────────────────
-async function saveListings(productId, condition, serpListings) {
-  if (!serpListings.length) return;
+const MIN_LISTING_PRICE = 150;
 
-  const rows = serpListings.map((l) => ({
+async function saveListings(productId, condition, serpListings) {
+  const eligible = serpListings.filter((l) => (l.finalPrice ?? l.price) >= MIN_LISTING_PRICE);
+  if (!eligible.length) return;
+
+  const rows = eligible.map((l) => ({
     id:            randomUUID(),
     product_id:    productId,
     retailer:      l.retailer,
@@ -57,8 +60,12 @@ function toListingModel(row, medianPrice) {
     title:        row.title       ?? null,
     imageUrl:     row.image_url   ?? null,
     freeShipping: row.free_shipping,
-    // label is based on finalPrice so comparisons reflect true total cost
-    label:        medianPrice > 0 ? labelListing(row.final_price ?? parseFloat(row.price), medianPrice) : null,
+    // label + reason based on finalPrice so comparisons reflect true total cost
+    ...(() => {
+      if (medianPrice <= 0) return { label: null, labelReason: null };
+      const { label, reason } = labelListingWithReason(row.final_price ?? parseFloat(row.price), medianPrice);
+      return { label, labelReason: reason };
+    })(),
   });
 }
 

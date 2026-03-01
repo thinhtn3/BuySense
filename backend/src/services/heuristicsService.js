@@ -15,6 +15,23 @@ export function labelListing(price, marketMedian) {
 }
 
 /**
+ * Returns both the label and a human-readable reason for it.
+ */
+export function labelListingWithReason(price, marketMedian) {
+  const label = labelListing(price, marketMedian);
+  const diff  = Math.abs(price - marketMedian);
+  const pct   = Math.round((diff / marketMedian) * 100);
+
+  const reason = label === 'great_deal'
+    ? `${pct}% below market median`
+    : label === 'fair_price'
+      ? `Within ${pct}% of market median`
+      : `${pct}% above market median`;
+
+  return { label, reason };
+}
+
+/**
  * Evaluates whether a used purchase is worth it compared to buying new.
  * @param {number} newPrice
  * @param {number} usedPrice

@@ -13,6 +13,7 @@
  * @property {number|null} period   - Instalment months (e.g. 24). null = one-time purchase
  * @property {number}  finalPrice   - price * period if period exists, otherwise price
  * @property {string}  label        - "great_deal" | "fair_price" | "overpriced"
+ * @property {string|null} labelReason - Human-readable rationale, e.g. "18% below market median"
  */
 
 export function createListing(data) {
@@ -33,5 +34,6 @@ export function createListing(data) {
     imageUrl:     data.imageUrl     ?? null,
     freeShipping: data.freeShipping ?? false,
     label:        data.label        ?? null,
+    labelReason:  data.labelReason  ?? null,
   };
 }

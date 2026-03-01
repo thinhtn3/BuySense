@@ -9,7 +9,8 @@ const LABEL_CONFIG = {
 };
 
 const CONDITION_LABEL = { new: 'New', used: 'Used' };
-const COLLAPSED_COUNT = 4;
+const COLLAPSED_COUNT      = 4;
+const COLLAPSED_COUNT_MANY = 2; // show ~1.5 when 3 products
 
 function fmt(n) {
   if (n == null) return '—';
@@ -55,6 +56,9 @@ function ListingCard({ listing, isCheapest }) {
               {fmt(listing.price)}/mo × {listing.period}
             </span>
           )}
+          {listing.labelReason && (
+            <span className="ls-card__reason">{listing.labelReason}</span>
+          )}
         </div>
         {listing.freeShipping && (
           <span className="ls-card__ship">Free shipping</span>
@@ -64,15 +68,16 @@ function ListingCard({ listing, isCheapest }) {
   );
 }
 
-function ProductListingsGrid({ product, listings, condition }) {
+function ProductListingsGrid({ product, listings, condition, totalProducts }) {
   const [modalOpen, setModalOpen] = useState(false);
 
   if (!listings?.length) return null;
 
+  const limit      = totalProducts >= 3 ? COLLAPSED_COUNT_MANY : COLLAPSED_COUNT;
   const sorted     = [...listings].sort((a, b) => (a.finalPrice ?? a.price) - (b.finalPrice ?? b.price));
   const cheapestId = sorted[0]?.id;
-  const preview    = sorted.slice(0, COLLAPSED_COUNT);
-  const hasMore    = sorted.length > COLLAPSED_COUNT;
+  const preview    = sorted.slice(0, limit);
+  const hasMore    = sorted.length > limit;
 
   return (
     <>
@@ -86,7 +91,7 @@ function ProductListingsGrid({ product, listings, condition }) {
 
         <div className="ls-grid-outer">
           <div className="ls-grid-wrap">
-            <div className="ls-grid">
+            <div className={`ls-grid${totalProducts >= 3 ? ' ls-grid--col' : ''}`}>
               {preview.map((l) => (
                 <ListingCard
                   key={l.id}
@@ -143,6 +148,7 @@ export default function ListingsSection({ products, priceResults }) {
             product={p}
             listings={byProduct[p.id]?.listings}
             condition={byProduct[p.id]?.condition}
+            totalProducts={products.length}
           />
         ))}
       </div>

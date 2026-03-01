@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import CategoryFilter from '@/components/CategoryFilter.jsx';
 import ProductSelector from '@/components/ProductSelector.jsx';
 
-const LABELS = ['A', 'B', 'C', 'D', 'E'];
+const LABELS = ['A', 'B', 'C'];
 
 let nextId = 1;
 function makeSelector() { return { id: nextId++, value: null }; }

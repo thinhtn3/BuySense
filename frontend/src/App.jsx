@@ -108,10 +108,6 @@ export default function App() {
         {fetchError && <p className="compare-error">{fetchError}</p>}
       </div>
 
-      {hasProducts && <ComparisonInsights products={selectedProducts} condition={condition} compareKey={compareKey} />}
-
-      <SpecsSection products={selectedProducts} />
-
       {priceResults && (
         <PriceComparison
           products={selectedProducts}
@@ -119,6 +115,10 @@ export default function App() {
           condition={condition}
         />
       )}
+
+      {hasProducts && <ComparisonInsights products={selectedProducts} condition={condition} compareKey={compareKey} />}
+
+      <SpecsSection products={selectedProducts} />
 
       {resourceData && (
         <ResourcesSection

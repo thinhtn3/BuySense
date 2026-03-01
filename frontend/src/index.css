@@ -1234,23 +1234,55 @@ body {
 }
 
 /* ─── Citation chip ─── */
-/* ─── Citation chip — thumbnail/icon only ─── */
+/* ─── Citable wrapper — chips hidden until hover ─── */
+.ci-citable {
+  display: inline;
+}
+
+.ci-chips-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.ci-chip-wrap {
+  display: inline-flex;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+/* Show all chips on hover of the citable ancestor */
+.ci-citable:hover .ci-chip-wrap {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* First chip always visible in verdict */
+.ci-chip-wrap--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ─── Citation chip ─── */
 .ci-citation {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 0 2px;
   padding: 0 5px;
   min-width: 20px;
   height: 18px;
   border-radius: 20px;
   text-decoration: none;
-  vertical-align: middle;
   flex-shrink: 0;
-  opacity: 0.9;
-  transition: opacity var(--bs-transition), filter var(--bs-transition);
+  transition: filter var(--bs-transition);
 }
-.ci-citation:hover { opacity: 1; filter: brightness(1.1); }
+.ci-citation:hover { filter: brightness(1.12); }
 .ci-citation__img {
   width: 12px;
   height: 12px;
@@ -1651,8 +1683,8 @@ body {
 }
 
 .ls-products {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   align-items: flex-start;
   gap: 20px;
 }
@@ -1732,6 +1764,18 @@ body {
   flex-wrap: wrap;
   gap: 10px;
   padding-bottom: 4px;
+}
+
+.ls-grid--col {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  max-height: 280px; /* shows ~1.5 cards — second card peeks */
+  overflow: hidden;
+}
+
+.ls-grid--col .ls-card {
+  flex: none;
+  width: 100%;
 }
 
 /* Individual listing card */
@@ -1856,6 +1900,14 @@ body {
   color: var(--bs-text-muted);
 }
 
+.ls-card__reason {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--bs-text-muted);
+  margin-top: 1px;
+  letter-spacing: 0.01em;
+}
+
 .ls-card__ship {
   font-size: 0.7rem;
   font-weight: 500;
@@ -1909,7 +1961,7 @@ body {
   z-index: 1001;
   display: flex;
   flex-direction: column;
-  width: min(720px, calc(100vw - 40px));
+  width: min(960px, calc(100vw - 40px));
   max-height: calc(100vh - 60px);
   margin: auto;
   background: var(--bs-card);
@@ -2097,6 +2149,14 @@ body {
 .lm-card__instalment {
   font-size: 0.7rem;
   color: var(--bs-text-muted);
+}
+
+.lm-card__reason {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--bs-text-muted);
+  margin-top: 1px;
+  letter-spacing: 0.01em;
 }
 
 .lm-card__footer-right {
