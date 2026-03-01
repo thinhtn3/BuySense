@@ -63,6 +63,7 @@ router.get('/', async (req, res, next) => {
         freeShipping: cheapest?.freeShipping ?? false,
         label:        cheapest?.label        ?? null,
         listingCount: listings.length,
+        listings,
       };
     });
 
