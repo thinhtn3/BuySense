@@ -37,9 +37,8 @@ function ResourceCard({ product, resources }) {
   if (!resources?.length) return null;
 
   const ORDER = { official: 0, review: 1, video: 2, article: 3 };
-  const sorted    = [...resources].sort((a, b) => (ORDER[a.type] ?? 4) - (ORDER[b.type] ?? 4));
+  const sorted      = [...resources].sort((a, b) => (ORDER[a.type] ?? 4) - (ORDER[b.type] ?? 4));
   const collapsible = sorted.length > COLLAPSED_COUNT;
-  const visible     = expanded ? sorted : sorted.slice(0, COLLAPSED_COUNT);
 
   return (
     <div className="resource-card">
@@ -50,45 +49,53 @@ function ResourceCard({ product, resources }) {
         </span>
       </div>
 
-      <div className={`resource-list-wrap${collapsible && !expanded ? ' resource-list-wrap--collapsed' : ''}`}>
-        <ul className="resource-list">
-          {visible.map((r) => {
-            const cfg = TYPE_CONFIG[r.type] ?? TYPE_CONFIG.article;
-            return (
-              <li key={r.id ?? r.url} className="resource-item">
-                <ResourceIcon type={r.type} thumbnail={r.thumbnail} />
-                <div className="resource-item__body">
-                  <a
-                    href={r.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="resource-item__title"
-                  >
-                    {r.title}
-                  </a>
-                  <p className="resource-item__meta">
-                    {r.source && <span>{r.source}</span>}
-                    {r.source && <span className="resource-item__dot">·</span>}
-                    <span>{cfg.label}</span>
-                    {r.rating != null && (
-                      <>
-                        <span className="resource-item__dot">·</span>
-                        <span className="resource-item__rating">
-                          {r.rating}/{r.rating_max ?? r.ratingMax ?? 10}
-                        </span>
-                      </>
-                    )}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-
-        {collapsible && !expanded && (
-          <div className="resource-fade" aria-hidden="true" />
-        )}
+      {/* Outer grid row animates 0fr ↔ 1fr — pure CSS, no layout JS */}
+      <div className={`resource-list-wrap${collapsible ? (expanded ? ' resource-list-wrap--open' : ' resource-list-wrap--closed') : ' resource-list-wrap--open'}`}>
+        {/* Inner div must have min-height:0 for grid trick */}
+        <div className="resource-list-inner">
+          <ul className="resource-list">
+            {sorted.map((r) => {
+              const cfg = TYPE_CONFIG[r.type] ?? TYPE_CONFIG.article;
+              return (
+                <li key={r.id ?? r.url} className="resource-item">
+                  <ResourceIcon type={r.type} thumbnail={r.thumbnail} />
+                  <div className="resource-item__body">
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="resource-item__title"
+                    >
+                      {r.title}
+                    </a>
+                    <p className="resource-item__meta">
+                      {r.source && <span>{r.source}</span>}
+                      {r.source && <span className="resource-item__dot">·</span>}
+                      <span>{cfg.label}</span>
+                      {r.rating != null && (
+                        <>
+                          <span className="resource-item__dot">·</span>
+                          <span className="resource-item__rating">
+                            {r.rating}/{r.rating_max ?? r.ratingMax ?? 10}
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
+
+      {/* Fade overlay: opacity transition, always in DOM */}
+      {collapsible && (
+        <div
+          className={`resource-fade${expanded ? ' resource-fade--hidden' : ''}`}
+          aria-hidden="true"
+        />
+      )}
 
       {collapsible && (
         <button

@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
-import ProductSelection  from '@/sections/ProductSelection.jsx';
-import SpecsSection      from '@/sections/SpecsSection.jsx';
-import PriceComparison      from '@/sections/PriceComparison.jsx';
-import ResourcesSection     from '@/sections/ResourcesSection.jsx';
-import ComparisonInsights   from '@/sections/ComparisonInsights.jsx';
-import ListingsSection      from '@/sections/ListingsSection.jsx';
-import ConditionToggle      from '@/components/ConditionToggle.jsx';
+import ProductSelection    from '@/sections/ProductSelection.jsx';
+import SpecsSection        from '@/sections/SpecsSection.jsx';
+import PriceComparison     from '@/sections/PriceComparison.jsx';
+import ResourcesSection    from '@/sections/ResourcesSection.jsx';
+import ComparisonInsights  from '@/sections/ComparisonInsights.jsx';
+import ListingsSection     from '@/sections/ListingsSection.jsx';
+import ConditionToggle     from '@/components/ConditionToggle.jsx';
+import BackgroundPath      from '@/components/BackgroundPath.jsx';
 
 export default function App() {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [condition,         setCondition]        = useState('new');
 
-  // Price state
   const [priceResults,  setPriceResults]  = useState(null);
-  // Resource state
   const [resourceData,  setResourceData]  = useState(null);
+  const [insightData,   setInsightData]   = useState(null);
 
   const [isFetching,    setIsFetching]    = useState(false);
   const [fetchError,    setFetchError]    = useState(null);
@@ -23,6 +23,7 @@ export default function App() {
   useEffect(() => {
     setPriceResults(null);
     setResourceData(null);
+    setInsightData(null);
     setFetchError(null);
   }, [selectedProducts]);
 
@@ -32,34 +33,48 @@ export default function App() {
     setFetchError(null);
     setPriceResults(null);
     setResourceData(null);
+    setInsightData(null);
 
     const ids = selectedProducts.map((p) => p.id).join(',');
 
-    // Fire both requests in parallel
+    // Fire prices + resources in parallel first
     const [priceRes, resourceRes] = await Promise.allSettled([
       fetch(`/api/prices?productIds=${ids}&condition=${condition}`),
       fetch(`/api/resources?productIds=${ids}`),
     ]);
 
     // Handle prices
+    let fetchedPrices = null;
     try {
       if (priceRes.status === 'rejected') throw new Error(priceRes.reason?.message);
       const res = priceRes.value;
       if (res.status === 429) throw new Error('Too many requests — please wait before comparing again.');
       if (!res.ok) throw new Error('Failed to fetch prices.');
-      setPriceResults(await res.json());
+      fetchedPrices = await res.json();
+      setPriceResults(fetchedPrices);
     } catch (err) {
       setFetchError(err.message);
     }
 
-    // Handle resources (non-blocking — don't block prices if resources fail)
+    // Handle resources (non-blocking)
     try {
       if (resourceRes.status === 'fulfilled' && resourceRes.value.ok) {
         setResourceData(await resourceRes.value.json());
       }
-    } catch {
-      // silently skip
-    }
+    } catch { /* silently skip */ }
+
+    // Fire insights in parallel with resources, using the prices we just got
+    try {
+      const insightRes = await fetch('/api/insights', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productIds: selectedProducts.map((p) => p.id),
+          prices:     fetchedPrices ?? [],
+        }),
+      });
+      if (insightRes.ok) setInsightData(await insightRes.json());
+    } catch { /* silently skip */ }
 
     setIsFetching(false);
   }
@@ -69,6 +84,7 @@ export default function App() {
 
   return (
     <main className="page">
+      <BackgroundPath />
       <header className="hero">
         <h1 className="hero-title">Compare, then shop.</h1>
         <p className="hero-subtitle">
@@ -80,7 +96,15 @@ export default function App() {
 
       {hasProducts && (
         <div className="compare-trigger">
-          <ConditionToggle value={condition} onChange={(c) => { setCondition(c); setPriceResults(null); setResourceData(null); }} />
+          <ConditionToggle
+            value={condition}
+            onChange={(c) => {
+              setCondition(c);
+              setPriceResults(null);
+              setResourceData(null);
+              setInsightData(null);
+            }}
+          />
 
           <button
             className={`compare-btn${isFetching ? ' compare-btn--loading' : ''}`}
@@ -88,10 +112,7 @@ export default function App() {
             disabled={isFetching}
           >
             {isFetching ? (
-              <>
-                <span className="compare-btn__spinner" />
-                Fetching…
-              </>
+              <><span className="compare-btn__spinner" />Fetching…</>
             ) : (
               hasComparisons ? 'Refresh' : 'Compare Prices →'
             )}
@@ -111,7 +132,12 @@ export default function App() {
         />
       )}
 
-      {hasProducts && <ComparisonInsights products={selectedProducts} />}
+      {insightData && (
+        <ComparisonInsights
+          products={selectedProducts}
+          insights={insightData}
+        />
+      )}
 
       {resourceData && (
         <ResourcesSection

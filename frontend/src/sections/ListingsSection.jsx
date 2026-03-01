@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence } from 'framer-motion';
 import ListingsModal from '@/components/ListingsModal.jsx';
 
 const LABEL_CONFIG = {
@@ -65,7 +66,9 @@ function ListingCard({ listing, isCheapest }) {
 }
 
 function ProductListingsGrid({ product, listings, condition }) {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen,   setModalOpen]   = useState(false);
+  const [triggerRect, setTriggerRect] = useState(null);
+  const btnRef = useRef(null);
 
   if (!listings?.length) return null;
 
@@ -73,6 +76,13 @@ function ProductListingsGrid({ product, listings, condition }) {
   const cheapestId = sorted[0]?.id;
   const preview    = sorted.slice(0, COLLAPSED_COUNT);
   const hasMore    = sorted.length > COLLAPSED_COUNT;
+
+  function handleOpen() {
+    if (btnRef.current) {
+      setTriggerRect(btnRef.current.getBoundingClientRect());
+    }
+    setModalOpen(true);
+  }
 
   return (
     <>
@@ -101,8 +111,9 @@ function ProductListingsGrid({ product, listings, condition }) {
 
           {hasMore && (
             <button
+              ref={btnRef}
               className="ls-toggle-btn"
-              onClick={() => setModalOpen(true)}
+              onClick={handleOpen}
             >
               View all {sorted.length} listings →
             </button>
@@ -110,13 +121,18 @@ function ProductListingsGrid({ product, listings, condition }) {
         </div>
       </div>
 
-      {modalOpen && createPortal(
-        <ListingsModal
-          product={product}
-          listings={listings}
-          condition={condition}
-          onClose={() => setModalOpen(false)}
-        />,
+      {createPortal(
+        <AnimatePresence>
+          {modalOpen && (
+            <ListingsModal
+              product={product}
+              listings={listings}
+              condition={condition}
+              triggerRect={triggerRect}
+              onClose={() => setModalOpen(false)}
+            />
+          )}
+        </AnimatePresence>,
         document.body
       )}
     </>

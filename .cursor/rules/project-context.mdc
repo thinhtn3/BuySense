@@ -114,3 +114,62 @@ The following mockup screenshots define the intended look and feel. Match this d
 ## If Time Permits
 
 - Cart system: users add listings and are linked to sellers
+
+---
+
+## Product Vision v1.0 — Decision Engine, Not a Comparison Site
+
+> **Core pitch:** "Translate market noise into clear purchase decisions."
+> BuySense is an **opinionated decision engine that prevents bad purchases** — not a shopping aggregator or polished comparison tool.
+
+### 1. Differentiation — Decision-First, Not Data-First
+
+- Frame every feature around **regret reduction**, not information density.
+- The product output is a **clear purchase recommendation**, not a ranked list.
+- Avoid neutral language ("here are your options") — take a position ("buy this, skip that under these conditions").
+
+### 2. Visible & Trustworthy Decision Logic
+
+- Lightly expose the reasoning behind labels in human-readable form:
+  - e.g. "Within 8% of market median" instead of just "Fair Price"
+  - e.g. "Low condition risk — sold by rated seller with return policy" instead of just a green badge
+- Never show raw formulas; show natural-language rationale.
+- Rename passive section labels to action-oriented ones:
+  - "Listings" → "Best Available Deals"
+  - "AI Insights" → "Our Take" (or similar opinionated framing)
+
+### 3. Decision Summary as the Climactic Moment
+
+- The recommendation must be **visually dominant** — not buried below specs and listings.
+- Lead with one bold, opinionated sentence per comparison:
+  - e.g. *"Choose iPhone 16 for better value; only buy S24 under $750."*
+- Treat the Decision Summary as the **core product output**, not an accessory section.
+
+### 4. Purchase Confidence Module (High-Impact Insight)
+
+Introduce a **Purchase Confidence** indicator: `Low / Medium / High`
+
+| Signal | Inputs |
+|--------|--------|
+| Price delta | How far the listing sits from market median |
+| Condition risk | New vs. used tradeoffs, seller reliability |
+| Return policy | Retailer/seller return window |
+| Review volatility | Consistency of expert + user sentiment |
+
+- Frame outputs around **fear reduction**, not scoring.
+- Especially critical for used purchases where risk is highest.
+
+### 5. Used-Market Differentiation
+
+- Explicitly surface hidden risks for used listings:
+  - Battery health uncertainty
+  - Seller reliability signals
+  - Return policy gaps
+- Show **new vs. used tradeoff explicitly** — not just price delta, but risk-adjusted value.
+- Position BuySense as a **safety layer for secondhand buying**, not just a cheaper-option finder.
+
+### Overall Goal
+
+Shift user perception:
+> ~~"Polished comparison tool"~~ → **"Opinionated decision engine that prevents bad purchases"**
+

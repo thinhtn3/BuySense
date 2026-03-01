@@ -119,11 +119,54 @@ body {
    Page layout
    ═══════════════════════════════════════════════════════════════ */
 .page {
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 80px var(--bs-page-padding) 120px;
+}
+
+/* ── Background zig-zag sketch path ───────────────────────── */
+.bg-path-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+
+.bg-path-line {
+  stroke: var(--bs-text);
+  stroke-width: 2.8px;
+  stroke-dasharray: 18px 10px;
+  stroke-linecap: round;
+  opacity: 0.07;
+}
+
+.bg-path-pin-shape {
+  fill: var(--bs-text);
+  opacity: 0.07;
+}
+
+.bg-path-pin-dot {
+  fill: var(--bs-bg);
+  opacity: 0.07;
+}
+
+.bg-path-pin-end-circle {
+  fill: none;
+  stroke: var(--bs-text);
+  stroke-width: 2.2px;
+  opacity: 0.07;
+}
+
+/* Ensure all page content floats above the background SVG */
+.page > :not(.bg-path-svg) {
+  position: relative;
+  z-index: 1;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -993,22 +1036,33 @@ body {
   border-radius: 3px;
 }
 
-/* Collapsible list wrapper */
+/* Collapsible list wrapper — max-height transition for peek effect */
 .resource-list-wrap {
-  position: relative;
-}
-
-.resource-list-wrap--collapsed {
   overflow: hidden;
+  transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ~1.5 items visible (each item ≈ 58px) */
+.resource-list-wrap--closed { max-height: 88px; }
+.resource-list-wrap--open   { max-height: 2000px; }
+
+.resource-list-inner {
+  /* no extra styles needed */
+}
+
+/* Fade overlay — always in DOM, fades out when expanded */
 .resource-fade {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
+  position: relative;
+  margin-top: -72px;
+  height: 72px;
   background: linear-gradient(to bottom, transparent, var(--bs-card));
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.resource-fade--hidden {
+  opacity: 0;
   pointer-events: none;
 }
 
@@ -1328,6 +1382,98 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+/* Winner banner */
+.ci-winner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  margin: 16px 24px 0;
+  background: rgba(42, 191, 163, 0.06);
+  border: 1px solid rgba(42, 191, 163, 0.2);
+  border-radius: 10px;
+}
+
+.ci-winner__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.ci-winner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ci-winner__label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--bs-accent);
+}
+
+.ci-winner__name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--bs-text);
+}
+
+.ci-winner__reason {
+  font-size: 0.8125rem;
+  color: var(--bs-text-muted);
+  line-height: 1.45;
+}
+
+/* Weakness item variant */
+.ci-strength-item--weak {
+  color: var(--bs-text-subtle);
+}
+
+.ci-strength-item__dot--pro {
+  background: var(--bs-accent);
+}
+
+.ci-strength-item__dot--con {
+  background: var(--bs-badge-over, #e5484d);
+  opacity: 0.7;
+}
+
+/* Difference aspect label */
+.ci-diff-item__aspect {
+  font-weight: 600;
+  color: var(--bs-text);
+}
+
+/* Recommendation block */
+.ci-recommendation {
+  background: var(--bs-hover-bg);
+  border-radius: 10px;
+  padding: 14px 16px !important;
+  border-bottom: none !important;
+  margin: 8px 0 0;
+}
+
+.ci-recommendation .ci-block__label {
+  margin-bottom: 8px;
+}
+
+.ci-recommendation__text {
+  font-size: 0.875rem;
+  color: var(--bs-text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Error */
+.ci-error {
+  font-size: 0.8125rem;
+  color: var(--bs-badge-over);
+  padding: 10px 24px 0;
+  margin: 0;
 }
 
 .ci-tag {

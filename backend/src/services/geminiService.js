@@ -1,13 +1,15 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
-let client = null;
+const MODEL = 'gemini-3-flash-preview';
+
+let ai = null;
 
 function getClient() {
-  if (client) return client;
+  if (ai) return ai;
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
-  client = new GoogleGenerativeAI(apiKey);
-  return client;
+  ai = new GoogleGenAI({ apiKey });
+  return ai;
 }
 
 /**
@@ -17,13 +19,12 @@ function getClient() {
  * @returns {Promise<string>}
  */
 export async function chat(prompt, systemInstruction) {
-  const model = getClient().getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    ...(systemInstruction ? { systemInstruction } : {}),
+  const response = await getClient().models.generateContent({
+    model:    MODEL,
+    contents: prompt,
+    config:   systemInstruction ? { systemInstruction } : undefined,
   });
-
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  return response.text;
 }
 
 /**
@@ -36,14 +37,14 @@ export async function chat(prompt, systemInstruction) {
  * @returns {Promise<{ reply: string, history: Array }>}
  */
 export async function chatWithHistory(history = [], userMessage, systemInstruction) {
-  const model = getClient().getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    ...(systemInstruction ? { systemInstruction } : {}),
+  const session = getClient().chats.create({
+    model:   MODEL,
+    history,
+    config:  systemInstruction ? { systemInstruction } : undefined,
   });
 
-  const chatSession = model.startChat({ history });
-  const result      = await chatSession.sendMessage(userMessage);
-  const reply       = result.response.text();
+  const response = await session.sendMessage({ message: userMessage });
+  const reply    = response.text;
 
   return {
     reply,

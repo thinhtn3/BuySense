@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 
 const LABEL_CONFIG = {
   great_deal: { text: 'Great Deal', cls: 'ls-badge--great' },
@@ -75,7 +75,7 @@ function ModalListingCard({ listing, isCheapest, index }) {
   );
 }
 
-export default function ListingsModal({ product, listings, condition, onClose }) {
+export default function ListingsModal({ product, listings, condition, triggerRect, onClose }) {
   // Close on Escape
   useEffect(() => {
     function onKey(e) {
@@ -96,30 +96,55 @@ export default function ListingsModal({ product, listings, condition, onClose })
   const cheapestId = sorted[0]?.id;
   const condLabel  = condition === 'used' ? 'Used' : 'New';
 
+  // Compute transform-origin + exit scale so the panel animates back to the button.
+  const { transformOrigin, exitScale } = useMemo(() => {
+    if (!triggerRect) return { transformOrigin: '50% 50%', exitScale: 0 };
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const pw = Math.min(720, vw - 40);
+    const ph = Math.min(vh - 60, vh * 0.72);
+
+    // Button center in panel-local coords
+    const bx = triggerRect.left + triggerRect.width  / 2;
+    const by = triggerRect.top  + triggerRect.height / 2;
+    const ox = bx - (vw - pw) / 2;
+    const oy = by - (vh - ph) / 2;
+
+    // Scale the panel down to roughly the button's width
+    const scale = triggerRect.width / pw;
+
+    return { transformOrigin: `${ox}px ${oy}px`, exitScale: scale };
+  }, [triggerRect]);
+
   return (
-    <AnimatePresence>
+    <>
       {/* Backdrop */}
       <motion.div
         className="lm-backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.28, ease: 'easeOut' }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
         onClick={onClose}
       />
 
-      {/* Panel */}
+      {/* Panel — expands from and collapses back to the trigger button position */}
       <motion.div
         className="lm-panel"
         role="dialog"
         aria-modal="true"
         aria-label={`All listings for ${product.name}`}
-        initial={{ opacity: 0, scale: 0.88 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.92 }}
+        style={{ transformOrigin }}
+        initial={{ scale: exitScale, opacity: 0 }}
+        animate={{ scale: 1,         opacity: 1 }}
+        exit={{    scale: exitScale, opacity: 0 }}
         transition={{
-          duration: 0.32,
-          ease: [0.16, 1, 0.3, 1],
+          type:      'spring',
+          stiffness: 380,
+          damping:   36,
+          mass:      0.85,
+          opacity:   { duration: 0.18, ease: 'easeOut' },
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -150,6 +175,6 @@ export default function ListingsModal({ product, listings, condition, onClose })
           </div>
         </div>
       </motion.div>
-    </AnimatePresence>
+    </>
   );
 }
