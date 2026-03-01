@@ -18,6 +18,7 @@ export default function App() {
 
   const [isFetching,    setIsFetching]    = useState(false);
   const [fetchError,    setFetchError]    = useState(null);
+  const [compareKey,    setCompareKey]    = useState(0);
 
   // Clear everything when product selection changes
   useEffect(() => {
@@ -62,6 +63,7 @@ export default function App() {
     }
 
     setIsFetching(false);
+    setCompareKey((k) => k + 1);
   }
 
   const hasProducts    = selectedProducts.length > 0;
@@ -85,28 +87,28 @@ export default function App() {
 
       <ProductSelection onSelectionsChange={setSelectedProducts} />
 
-      {hasProducts && (
-        <div className="compare-trigger">
-          <ConditionToggle value={condition} onChange={(c) => { setCondition(c); setPriceResults(null); setResourceData(null); }} />
+      <div className="compare-trigger">
+        <ConditionToggle value={condition} onChange={(c) => { setCondition(c); setPriceResults(null); setResourceData(null); }} />
 
-          <button
-            className={`compare-btn${isFetching ? ' compare-btn--loading' : ''}`}
-            onClick={handleCompare}
-            disabled={isFetching}
-          >
-            {isFetching ? (
-              <>
-                <span className="compare-btn__spinner" />
-                Fetching…
-              </>
-            ) : (
-              hasComparisons ? 'Refresh' : 'Compare Prices →'
-            )}
-          </button>
+        <button
+          className={`compare-btn${isFetching ? ' compare-btn--loading' : ''}`}
+          onClick={handleCompare}
+          disabled={isFetching || !hasProducts}
+        >
+          {isFetching ? (
+            <>
+              <span className="compare-btn__spinner" />
+              Fetching…
+            </>
+          ) : (
+            hasComparisons ? 'Refresh' : 'Compare Prices →'
+          )}
+        </button>
 
-          {fetchError && <p className="compare-error">{fetchError}</p>}
-        </div>
-      )}
+        {fetchError && <p className="compare-error">{fetchError}</p>}
+      </div>
+
+      {hasProducts && <ComparisonInsights products={selectedProducts} condition={condition} compareKey={compareKey} />}
 
       <SpecsSection products={selectedProducts} />
 
@@ -117,8 +119,6 @@ export default function App() {
           condition={condition}
         />
       )}
-
-      {hasProducts && <ComparisonInsights products={selectedProducts} />}
 
       {resourceData && (
         <ResourcesSection

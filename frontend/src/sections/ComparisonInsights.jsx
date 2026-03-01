@@ -1,46 +1,71 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-// ─── Citation chip — thumbnail/icon only, no label text ──────────────────────
+// Color per source type — matches the screenshot style
+const TYPE_CHIP = {
+  official: { bg: '#2ABFA3', color: '#fff' },
+  review:   { bg: '#F5A623', color: '#fff' },
+  video:    { bg: '#E25C5C', color: '#fff' },
+  article:  { bg: '#3A9E5F', color: '#fff' },
+};
+
+function abbrev(source) {
+  if (!source) return '?';
+  return source.slice(0, 2).toUpperCase();
+}
+
+// ─── Citation chip — only rendered when a URL exists ─────────────────────────
 function CitationChip({ resource }) {
+  if (!resource?.url) return null;
+  const chip = TYPE_CHIP[resource.type] ?? TYPE_CHIP.article;
+
   return (
     <a
       href={resource.url}
       target="_blank"
       rel="noopener noreferrer"
       className="ci-citation"
-      title={resource.title}
+      title={resource.title ?? resource.source}
+      style={{ background: chip.bg }}
     >
       {resource.thumbnail ? (
         <img src={resource.thumbnail} alt={resource.source ?? ''} className="ci-citation__img" />
       ) : (
-        <span className="ci-citation__icon">
-          {resource.type === 'official' ? '🔗' : resource.type === 'review' ? '⭐' : resource.type === 'video' ? '▶' : '📄'}
+        <span className="ci-citation__abbrev" style={{ color: chip.color }}>
+          {abbrev(resource.source)}
         </span>
       )}
     </a>
   );
 }
 
-// Parses "[P1-2]" tokens out of a string and replaces them with citation chips.
+// Resolves a single "P1-2" token string to a resource
+function resolveRef(ref, sources, products) {
+  const m = ref.trim().match(/^P(\d+)-(\d+)$/i);
+  if (!m) return null;
+  const product  = products[parseInt(m[1], 10) - 1];
+  const resource = product ? sources?.[product.id]?.[parseInt(m[2], 10)] : null;
+  return resource?.url ? resource : null;
+}
+
+// Parses "[P1-2]" or "[P1-2, P1-6]" tokens — renders chips, drops silently if no URL.
 function WithCitations({ text, sources, products }) {
   if (!text || !sources || !products) return <>{text}</>;
 
   const parts = [];
-  const regex = /\[P(\d+)-(\d+)\]/g;
+  // Matches [P1-2] or [P1-2, P1-6] or [P1-2, P2-3] etc.
+  const regex = /\[(P\d+-\d+(?:,\s*P\d+-\d+)*)\]/gi;
   let last = 0;
   let match;
 
   while ((match = regex.exec(text)) !== null) {
     if (match.index > last) parts.push(text.slice(last, match.index));
 
-    const productIdx = parseInt(match[1], 10) - 1;
-    const sourceNum  = parseInt(match[2], 10);
-    const product    = products[productIdx];
-    const resource   = product ? sources?.[product.id]?.[sourceNum] : null;
+    const refs      = match[1].split(',');
+    const resources = refs.map((r) => resolveRef(r, sources, products)).filter(Boolean);
 
-    if (resource) {
-      parts.push(<CitationChip key={match.index} resource={resource} />);
-    }
+    resources.forEach((resource, i) => {
+      parts.push(<CitationChip key={`${match.index}-${i}`} resource={resource} />);
+    });
 
     last = match.index + match[0].length;
   }
@@ -168,6 +193,101 @@ function BestForRow({ products, bestFor }) {
   );
 }
 
+// ─── Used Risk Section ────────────────────────────────────────────────────────
+const RISK_CONFIG = {
+  low:    { label: 'Low Risk',    color: '#2ABFA3', bg: '#E8F7F4' },
+  medium: { label: 'Medium Risk', color: '#F5A623', bg: '#FEF3CD' },
+  high:   { label: 'High Risk',   color: '#E25C5C', bg: '#FDECEA' },
+};
+
+function UsedRiskCard({ product, insight, sources, products }) {
+  if (!insight) return null;
+  const risk = RISK_CONFIG[insight.batteryRisk] ?? RISK_CONFIG.medium;
+
+  return (
+    <div className="ci-risk-card">
+      <div className="ci-risk-card__header">
+        <span className="ci-risk-card__name">{product.name}</span>
+        <span
+          className="ci-risk-card__badge"
+          style={{ background: risk.bg, color: risk.color }}
+        >
+          {risk.label}
+        </span>
+      </div>
+
+      {insight.batteryNote && (
+        <div className="ci-risk-row">
+          <span className="ci-risk-row__icon">🔋</span>
+          <p className="ci-risk-row__text">
+            <WithCitations text={insight.batteryNote} sources={sources} products={products} />
+          </p>
+        </div>
+      )}
+
+      {insight.topRisks?.length > 0 && (
+        <div className="ci-risk-group">
+          <p className="ci-risk-group__label">Watch Out For</p>
+          <ul className="ci-risk-list">
+            {insight.topRisks.map((r, i) => (
+              <li key={i} className="ci-risk-item ci-risk-item--warn">
+                <span aria-hidden="true">⚠</span>
+                <span><WithCitations text={r} sources={sources} products={products} /></span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {insight.sellerChecklist?.length > 0 && (
+        <div className="ci-risk-group">
+          <p className="ci-risk-group__label">Before You Buy</p>
+          <ul className="ci-risk-list">
+            {insight.sellerChecklist.map((c, i) => (
+              <li key={i} className="ci-risk-item ci-risk-item--check">
+                <span aria-hidden="true">✓</span>
+                <span><WithCitations text={c} sources={sources} products={products} /></span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {insight.worthIt && (
+        <div className="ci-risk-verdict">
+          <span className="ci-risk-verdict__icon">💡</span>
+          <p className="ci-risk-verdict__text">
+            <WithCitations text={insight.worthIt} sources={sources} products={products} />
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UsedRiskSection({ products, usedInsight, condition, sources }) {
+  if (!usedInsight || condition === 'new') return null;
+
+  const condLabel = condition === 'like_new' ? 'Like New' : 'Used';
+
+  return (
+    <div className="ci-block">
+      <p className="ci-block__label">{condLabel} Market Risk Analysis</p>
+      <div className="ci-risk-grid">
+        {products.map((p) => (
+          <UsedRiskCard
+            key={p.id}
+            product={p}
+            insight={usedInsight[p.id]}
+            sources={sources}
+            products={products}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Tab 2: What People Are Saying ───────────────────────────────────────────
 
 function QuoteCard({ resource, productName }) {
@@ -213,11 +333,21 @@ function WhatPeopleSaying({ products, sources }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function ComparisonInsights({ products }) {
+export default function ComparisonInsights({ products, condition = 'new', compareKey = 0 }) {
   const [status,   setStatus]   = useState('idle');
   const [insights, setInsights] = useState(null);
   const [error,    setError]    = useState(null);
   const [tab,      setTab]      = useState('overview');
+  const prevKeyRef = useRef(0);
+
+  // Auto-trigger whenever Compare is clicked (compareKey increments)
+  useEffect(() => {
+    if (compareKey > 0 && compareKey !== prevKeyRef.current && products.length > 0) {
+      prevKeyRef.current = compareKey;
+      handleGenerate();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compareKey]);
 
   if (!products.length) return null;
 
@@ -230,7 +360,7 @@ export default function ComparisonInsights({ products }) {
       const res = await fetch('/api/insights', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ productIds: products.map((p) => p.id) }),
+        body:    JSON.stringify({ productIds: products.map((p) => p.id), condition }),
       });
 
       if (!res.ok) {
@@ -253,9 +383,6 @@ export default function ComparisonInsights({ products }) {
         <div className="ci-header__left">
           <span className="ci-header__icon" aria-hidden="true">✦</span>
           <h2 className="ci-header__title">AI Insights</h2>
-          {status === 'idle' && (
-            <span className="ci-header__hint">Click to generate a breakdown</span>
-          )}
         </div>
         <button
           className={`ci-generate-btn${status === 'loading' ? ' ci-generate-btn--loading' : ''}`}
@@ -264,10 +391,8 @@ export default function ComparisonInsights({ products }) {
         >
           {status === 'loading' ? (
             <><span className="ci-btn-spinner" />Generating…</>
-          ) : status === 'ready' ? (
-            'Regenerate ↺'
           ) : (
-            'Generate Insights →'
+            'Regenerate ↺'
           )}
         </button>
       </div>
@@ -305,6 +430,12 @@ export default function ComparisonInsights({ products }) {
                 products={products}
                 pros={insights.pros}
                 cons={insights.cons}
+                sources={insights.sources}
+              />
+              <UsedRiskSection
+                products={products}
+                usedInsight={insights.usedInsight}
+                condition={condition}
                 sources={insights.sources}
               />
               <DifferencesList items={insights.differences} />

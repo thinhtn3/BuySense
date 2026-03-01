@@ -1240,25 +1240,30 @@ body {
   align-items: center;
   justify-content: center;
   margin: 0 2px;
-  padding: 2px;
-  background: var(--bs-hover-bg);
-  border: 1px solid var(--bs-border);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  padding: 0 5px;
+  min-width: 20px;
+  height: 18px;
+  border-radius: 20px;
   text-decoration: none;
   vertical-align: middle;
   flex-shrink: 0;
-  transition: background var(--bs-transition);
+  opacity: 0.9;
+  transition: opacity var(--bs-transition), filter var(--bs-transition);
 }
-.ci-citation:hover { background: var(--bs-border); }
+.ci-citation:hover { opacity: 1; filter: brightness(1.1); }
 .ci-citation__img {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   object-fit: cover;
 }
-.ci-citation__icon { font-size: 0.6rem; line-height: 1; }
+.ci-citation__abbrev {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
 
 /* ─── Tabs ─── */
 .ci-tabs {
@@ -1329,6 +1334,100 @@ body {
   font-weight: 700;
   color: var(--bs-badge-over);
   flex-shrink: 0;
+}
+
+/* ─── Quote cards ─── */
+/* ─── Used Risk Analysis ─── */
+.ci-risk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+.ci-risk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--bs-card);
+  border: 1px solid var(--bs-border);
+  border-radius: var(--bs-radius-card);
+}
+.ci-risk-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ci-risk-card__name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--bs-text);
+}
+.ci-risk-card__badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.ci-risk-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--bs-hover-bg);
+  border-radius: var(--bs-radius-sm);
+  padding: 10px 12px;
+}
+.ci-risk-row__icon { font-size: 1rem; flex-shrink: 0; line-height: 1.4; }
+.ci-risk-row__text {
+  font-size: 0.8125rem;
+  color: var(--bs-text);
+  line-height: 1.5;
+  margin: 0;
+}
+.ci-risk-group { display: flex; flex-direction: column; gap: 6px; }
+.ci-risk-group__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bs-text-muted);
+}
+.ci-risk-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ci-risk-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--bs-text);
+}
+.ci-risk-item span:first-child { flex-shrink: 0; }
+.ci-risk-item--warn span:first-child { color: #F5A623; }
+.ci-risk-item--check span:first-child { color: #2ABFA3; font-weight: 700; }
+.ci-risk-verdict {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--bs-divider);
+  margin-top: 2px;
+}
+.ci-risk-verdict__icon { font-size: 1rem; flex-shrink: 0; line-height: 1.4; }
+.ci-risk-verdict__text {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--bs-text);
+  line-height: 1.5;
+  margin: 0;
 }
 
 /* ─── Quote cards ─── */
