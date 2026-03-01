@@ -13,11 +13,17 @@ async function readFromSupabase(productId, condition) {
     .from('listings')
     .select('*')
     .eq('product_id', productId)
-    .eq('condition', condition)
-    .order('price', { ascending: true });
+    .eq('condition', condition);
 
   if (error) throw new Error(error.message);
-  return data ?? [];
+
+  // Sort by effective price (final_price takes priority over base price)
+  // so that discounted listings rank correctly instead of by their pre-discount price
+  return (data ?? []).sort((a, b) => {
+    const ea = parseFloat(a.final_price ?? a.price);
+    const eb = parseFloat(b.final_price ?? b.price);
+    return ea - eb;
+  });
 }
 
 // ─── Persist SerpAPI results into Supabase ────────────────────────────────────

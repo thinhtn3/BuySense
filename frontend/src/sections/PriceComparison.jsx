@@ -102,7 +102,7 @@ export default function PriceComparison({ products, priceResults, condition }) {
       <div className="price-comparison__card">
         <h2 className="price-comparison__title">
           <span className="price-comparison__title-icon">↘</span>
-          Price Comparison · {condLabel}
+          Best Available Price · {condLabel}
         </h2>
 
         <div className="price-cards-row">
