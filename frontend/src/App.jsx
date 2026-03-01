@@ -82,13 +82,16 @@ export default function App() {
       </div>
 
       <nav className="navbar">
-        <span className="navbar__logo">BuySense</span>
+        <span className="navbar__logo"><span className="navbar__logo--accent">Buy</span>Sense</span>
         <UserWidget />
       </nav>
 
       <AnimateIn>
         <header className="hero">
-          <h1 className="hero-title">Compare, then shop.</h1>
+          <h1 className="hero-title">
+            <span className="hero-title__accent">Compare,</span>
+            {' '}then shop.
+          </h1>
           <p className="hero-subtitle">
             Choose what you're deciding between. We'll show you what matters.
           </p>

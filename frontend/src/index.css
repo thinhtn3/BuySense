@@ -171,6 +171,10 @@ body {
   color: var(--bs-text);
 }
 
+.hero-title__accent {
+  color: var(--bs-accent);
+}
+
 .hero-subtitle {
   margin-top: 10px;
   font-size: 1rem;
@@ -192,13 +196,13 @@ body {
 .category-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 11px 28px;
+  gap: 7px;
+  padding: 13px 32px;
   background: var(--bs-card);
   border: 1.5px solid var(--bs-border);
   border-radius: var(--bs-radius-pill);
   font-family: var(--bs-font-sans);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   color: var(--bs-text-muted);
   cursor: pointer;
@@ -369,20 +373,20 @@ body {
   outline: none;
   background: transparent;
   font-family: var(--bs-font-sans);
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--bs-text);
   min-width: 0;
 }
 
 .selector-input::placeholder {
-  color: var(--bs-text-subtle);
+  color: var(--bs-text-muted);
   font-weight: 400;
 }
 
 .selector-meta {
   font-size: 0.75rem;
-  color: var(--bs-text-subtle);
+  color: var(--bs-text-muted);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -521,7 +525,7 @@ body {
 
 .selector-option-meta {
   font-size: 0.75rem;
-  color: var(--bs-text-subtle);
+  color: var(--bs-text-muted);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -2551,11 +2555,15 @@ body {
 
 .navbar__logo {
   font-family: var(--bs-font-serif);
-  font-size: 1.1rem;
+  font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--bs-text);
   user-select: none;
+}
+
+.navbar__logo--accent {
+  color: var(--bs-accent);
 }
 
 /* ─── User Widget ─────────────────────────────────────────────────────────── */

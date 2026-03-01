@@ -20,7 +20,7 @@ export default function CategoryFilter({ value, onChange }) {
           className={`category-pill ${value === id ? 'category-pill--active' : ''}`}
           onClick={() => onChange(id)}
         >
-          <Icon size={15} strokeWidth={1.75} className="category-pill__icon" />
+          <Icon size={17} strokeWidth={1.75} className="category-pill__icon" />
           <span className="category-pill__label">{label}</span>
         </button>
       ))}
