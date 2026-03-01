@@ -174,19 +174,7 @@ create table wishlists (
 
 ---
 
-### 5. Seed products
-
-```bash
-# Seed the products table from backend/data/products.json
-cd backend && npm run seed:db
-
-# Optionally seed Apple 2025/2026 products
-node scripts/seed-apple-2025.js
-```
-
----
-
-### 6. Run the app
+### 5. Run the app
 
 In two terminals:
 
