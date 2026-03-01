@@ -157,6 +157,10 @@ export default function App() {
       )}
 
       <WishlistPopup />
+
+      <footer className="site-footer">
+        Made with <span className="site-footer__heart">♡</span> by Tony Nguyen
+      </footer>
     </main>
   );
 }

@@ -14,6 +14,7 @@ export default function ProductSelection({ onSelectionsChange }) {
   const [error,          setError]          = useState(null);
   const [selectors,      setSelectors]      = useState([makeSelector()]);
   const [activeCategory, setActiveCategory] = useState('phones');
+  const [isExiting,      setIsExiting]      = useState(false);
 
   useEffect(() => {
     fetch('/api/products')
@@ -53,6 +54,7 @@ export default function ProductSelection({ onSelectionsChange }) {
   }
 
   function removeSelector(selectorId) {
+    setIsExiting(true);
     setSelectors((prev) => prev.filter((s) => s.id !== selectorId));
   }
 
@@ -70,14 +72,15 @@ export default function ProductSelection({ onSelectionsChange }) {
 
         {!loading && !error && (
           <div className="selectors-row">
-            <AnimatePresence initial={false}>
+            <AnimatePresence initial={false} onExitComplete={() => setIsExiting(false)}>
               {selectors.map((s, i) => (
                 <motion.div
                   key={s.id}
+                  layout
                   className="selector-motion-wrap"
                   initial={{ opacity: 0, scale: 0.92, y: 12 }}
                   animate={{ opacity: 1, scale: 1,    y: 0  }}
-                  exit={{    opacity: 0, scale: 0.92, y: 8  }}
+                  exit={{    opacity: 0, scale: 0.88, y: 8, transition: { duration: 0.18, ease: 'easeIn' } }}
                   transition={{ type: 'spring', stiffness: 380, damping: 28, mass: 0.8 }}
                 >
                   <ProductSelector
@@ -93,11 +96,16 @@ export default function ProductSelection({ onSelectionsChange }) {
               ))}
             </AnimatePresence>
 
-            {selectors.length < LABELS.length && (
-              <button className="add-selector-btn" onClick={addSelector}>
+            {selectors.length < LABELS.length && !isExiting && (
+              <motion.button
+                layout
+                className="add-selector-btn"
+                onClick={addSelector}
+                transition={{ type: 'spring', stiffness: 380, damping: 28, mass: 0.8 }}
+              >
                 <span className="add-selector-btn__icon">+</span>
                 <span>Add product</span>
-              </button>
+              </motion.button>
             )}
           </div>
         )}

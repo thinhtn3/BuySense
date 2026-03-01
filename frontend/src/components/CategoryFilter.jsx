@@ -1,12 +1,12 @@
-import CATEGORY_EMOJI from '@/lib/categoryEmoji.js';
+import { Smartphone, Laptop, Headphones, Tv, Cpu, Speaker } from 'lucide-react';
 
 const CATEGORIES = [
-  { id: 'phones',       label: 'Phones'     },
-  { id: 'laptops',      label: 'Laptops'    },
-  { id: 'headphones',   label: 'Headphones' },
-  { id: 'tvs',          label: 'TVs'        },
-  { id: 'gpus',         label: 'GPUs'       },
-  { id: 'soundsystems', label: 'Sound'      },
+  { id: 'phones',       label: 'Phones',      Icon: Smartphone },
+  { id: 'laptops',      label: 'Laptops',     Icon: Laptop     },
+  { id: 'headphones',   label: 'Headphones',  Icon: Headphones },
+  { id: 'tvs',          label: 'TVs',         Icon: Tv         },
+  { id: 'gpus',         label: 'GPUs',        Icon: Cpu        },
+  { id: 'soundsystems', label: 'Sound',       Icon: Speaker    },
 ];
 
 export { CATEGORIES };
@@ -14,14 +14,14 @@ export { CATEGORIES };
 export default function CategoryFilter({ value, onChange }) {
   return (
     <div className="category-filter">
-      {CATEGORIES.map((cat) => (
+      {CATEGORIES.map(({ id, label, Icon }) => (
         <button
-          key={cat.id}
-          className={`category-pill ${value === cat.id ? 'category-pill--active' : ''}`}
-          onClick={() => onChange(cat.id)}
+          key={id}
+          className={`category-pill ${value === id ? 'category-pill--active' : ''}`}
+          onClick={() => onChange(id)}
         >
-          <span className="category-pill__emoji">{CATEGORY_EMOJI[cat.id]}</span>
-          <span className="category-pill__label">{cat.label}</span>
+          <Icon size={15} strokeWidth={1.75} className="category-pill__icon" />
+          <span className="category-pill__label">{label}</span>
         </button>
       ))}
     </div>

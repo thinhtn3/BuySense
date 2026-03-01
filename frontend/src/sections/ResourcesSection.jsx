@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { Library, BookOpen, Link2, Star, Play, FileText } from 'lucide-react';
 
 const TYPE_CONFIG = {
-  official: { icon: '🔗', bg: '#E8F7F4', color: '#2ABFA3', label: 'Official'  },
-  review:   { icon: '⭐', bg: '#FEF3CD', color: '#C88A00', label: 'Review'    },
-  video:    { icon: '▶',  bg: '#FDECEA', color: '#E25C5C', label: 'Video'     },
-  article:  { icon: '📄', bg: '#EAF3EC', color: '#3A9E5F', label: 'Article'   },
+  official: { Icon: Link2,    bg: '#E8F7F4', color: '#2ABFA3', label: 'Official' },
+  review:   { Icon: Star,     bg: '#FEF3CD', color: '#C88A00', label: 'Review'   },
+  video:    { Icon: Play,     bg: '#FDECEA', color: '#E25C5C', label: 'Video'    },
+  article:  { Icon: FileText, bg: '#EAF3EC', color: '#3A9E5F', label: 'Article'  },
 };
 
 const COLLAPSED_COUNT = 3;
@@ -26,7 +27,7 @@ function ResourceIcon({ type, thumbnail }) {
       style={{ background: cfg.bg, color: cfg.color }}
       aria-hidden="true"
     >
-      {cfg.icon}
+      <cfg.Icon size={14} strokeWidth={2} />
     </span>
   );
 }
@@ -44,7 +45,7 @@ function ResourceCard({ product, resources }) {
   return (
     <div className="resource-card">
       <div className="resource-card__header">
-        <span className="resource-card__header-icon">📋</span>
+        <BookOpen size={16} strokeWidth={1.75} className="resource-card__header-icon" aria-hidden="true" />
         <span className="resource-card__header-title">
           Resources for {product.name}
         </span>
@@ -110,7 +111,7 @@ export default function ResourcesSection({ products, resourceData }) {
   return (
     <section className="resources-section">
       <div className="section-heading">
-        <span className="section-heading__icon" aria-hidden="true">✦</span>
+        <Library size={16} strokeWidth={1.75} className="section-heading__icon" aria-hidden="true" />
         <h2>Resources &amp; Reviews</h2>
       </div>
 
