@@ -7,6 +7,7 @@ import ComparisonInsights   from '@/sections/ComparisonInsights.jsx';
 import ListingsSection      from '@/sections/ListingsSection.jsx';
 import ConditionToggle      from '@/components/ConditionToggle.jsx';
 import UserWidget           from '@/components/UserWidget.jsx';
+import WishlistPopup        from '@/components/WishlistPopup.jsx';
 
 export default function App() {
   const [selectedProducts, setSelectedProducts] = useState([]);
@@ -139,6 +140,8 @@ export default function App() {
           priceResults={priceResults}
         />
       )}
+
+      <WishlistPopup />
     </main>
   );
 }
